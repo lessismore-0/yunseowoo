@@ -744,187 +744,58 @@ body::before{background:radial-gradient(ellipse at 80% 10%,#313275 0,transparent
 @media(orientation:landscape) and (max-height:350px){.app{grid-template-rows:36px 24px 66px minmax(0,1fr) 42px;row-gap:6px;padding-top:7px;padding-bottom:11px;column-gap:18px}.board-frame{height:calc(100dvh - 24px);padding:14px}.brand h1{font-size:18px}.brand p{font-size:10px}.mark{height:32px;width:32px}.score-row{height:32px}.btn{height:42px}.empty-state .es-glyph{display:none}.empty-state .es-title{font-size:12px}.empty-state .es-sub{font-size:10px}.panel-head{padding:5px 10px}.icon-btn{height:36px}}
 @media(orientation:portrait) and (max-width:1024px){.app{visibility:hidden;pointer-events:none}.rotate-guide{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px;background:radial-gradient(ellipse at top,#34477b88,transparent 70%)}.rotate-guide h2{font-size:22px;line-height:1.5;margin:0 0 8px;letter-spacing:-.04em}.rotate-guide p{font-size:15px;color:#d4e7ff;margin:0 0 24px}.rotate-guide small{max-width:260px;font-size:12px;line-height:1.7;color:#a6bfdf}}
 
-/* 가로 화면: 체스판 60% / 정보 40% */
-@media (orientation: landscape) {
-  .app {
-    width: 100%;
-    max-width: none;
-    height: 100vh;
-    height: 100dvh;
-
-    display: grid;
-    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-    grid-template-rows: 38px 26px 64px minmax(0, 1fr) 44px;
-    grid-template-areas:
-      "board top"
-      "board status"
-      "board score"
-      "board panel"
-      "board ctrl";
-
-    column-gap: 12px;
-    row-gap: 6px;
-    padding:
-      max(8px, env(safe-area-inset-top))
-      max(10px, env(safe-area-inset-right))
-      max(10px, env(safe-area-inset-bottom))
-      max(10px, env(safe-area-inset-left));
-  }
-
-  /* 왼쪽 영역을 모두 사용하되 정사각형 유지 */
-  .board-shell {
-    grid-area: board;
-    width: 100%;
-    height: 100%;
-    min-width: 0;
-    min-height: 0;
-    align-self: stretch;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .board-frame {
-    width: min(100%, calc(100dvh - 28px));
-    height: auto;
-    max-width: 100%;
-    max-height: none;
-    aspect-ratio: 1 / 1;
-    padding: 12px;
-    border-radius: 14px;
-  }
-
-  .board-frame .frame-inner {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 1 / 1;
-  }
-
-  .rail-label.file {
-    bottom: -10px;
-    font-size: 8px;
-  }
-
-  .rail-label.rank {
-    left: -10px;
-    font-size: 8px;
-  }
-
-  /* 오른쪽 설명은 짧고 간결하게 */
-  .top,
-  .statusbar,
-  .scoreboard,
-  .panel,
-  .controls {
-    min-width: 0;
-  }
-
-  .brand {
-    gap: 7px;
-    min-width: 0;
-  }
-
-  .brand h1 {
-    font-size: 17px;
-    white-space: nowrap;
-  }
-
-  .brand p {
-    display: none;
-  }
-
-  .mark {
-    width: 30px;
-    height: 30px;
-    font-size: 22px;
-    flex-shrink: 0;
-  }
-
-  .icon-btn {
-    width: 44px;
-    height: 36px;
-    flex-shrink: 0;
-  }
-
-  #statusText {
-    font-size: 13px;
-  }
-
-  .score-row {
-    height: 31px;
-    padding: 0 9px;
-    gap: 6px;
-  }
-
-  .score-row .who {
-    min-width: 0;
-    font-size: 11px;
-  }
-
-  .panel {
-    min-height: 0;
-  }
-
-  .panel-head:has(.quick-level) {
-    padding: 4px 6px;
-    gap: 4px;
-  }
-
-  .panel-head .t,
-  .panel-head .n {
-    font-size: 10px;
-    white-space: nowrap;
-  }
-
-  .panel-head .quick-level button {
-    min-height: 30px;
-    padding: 4px 7px;
-    font-size: 11px;
-  }
-
-  .empty-state {
-    padding: 5px;
-    gap: 2px;
-  }
-
-  .empty-state .es-glyph,
-  .empty-state .es-sub {
-    display: none;
-  }
-
-  .empty-state .es-title {
-    font-size: 11px;
-  }
-
-  .controls {
-    gap: 6px;
-  }
-
-  .controls .btn {
-    height: 44px;
-    font-size: 12px;
-  }
+/* 세로 화면 중심: 체스판은 화면 폭을 가득 사용 */
+html, body { height:auto; min-height:100%; overscroll-behavior:auto; }
+body { overflow-x:hidden; overflow-y:auto; }
+.rotate-guide { display:none !important; }
+.app {
+  visibility:visible; pointer-events:auto;
+  display:grid; width:100%; max-width:560px;
+  height:auto; min-height:100vh; min-height:100dvh;
+  grid-template-columns:minmax(0,1fr);
+  grid-template-rows:40px 24px auto 46px 40px minmax(90px,1fr);
+  grid-template-areas:"top" "status" "board" "ctrl" "score" "panel";
+  align-items:stretch; gap:8px;
+  padding:max(8px,env(safe-area-inset-top)) 6px max(12px,env(safe-area-inset-bottom));
 }
-
-@media (orientation: landscape) {
-  .brand h1 { font-size: clamp(13px, 2vw, 17px); }
-  .brand { gap: 5px; }
-  .panel-head .quick-level button { padding: 4px 5px; font-size: 10px; }
-  .panel-head .t, .panel-head .n { font-size: 9px; }
-  .panel-head:has(.quick-level) { padding: 4px; gap: 3px; }
-  .empty-state .es-title { font-size: 10px; }
+.top { grid-area:top; padding:0 6px; min-width:0; }
+.brand { gap:8px; min-width:0; }
+.brand h1 { font-size:18px; letter-spacing:-.04em; white-space:nowrap; }
+.brand p { display:none; }
+.mark { width:33px; height:33px; font-size:24px; }
+.icon-btn { width:48px; height:38px; }
+.statusbar { grid-area:status; padding:0 8px; min-width:0; }
+#statusText { font-size:13px; }
+.board-shell { grid-area:board; width:100%; height:auto; min-height:0; min-width:0; align-self:start; }
+.board-frame { width:100%; height:auto; max-width:none; max-height:none; aspect-ratio:1; padding:12px; border-radius:15px; box-shadow:0 4px 0 #0d2348; }
+.board-frame .frame-inner { width:100%; height:auto; aspect-ratio:1; }
+.rail-label.file { bottom:-10px; font-size:8px; }
+.rail-label.rank { left:-10px; font-size:8px; }
+.controls { grid-area:ctrl; gap:7px; padding:0 3px; min-width:0; }
+.controls .btn { height:44px; font-size:13px; }
+.scoreboard { grid-area:score; display:grid; grid-template-columns:1fr 1fr; min-width:0; }
+.score-row { height:38px; min-width:0; gap:5px; padding:0 8px; }
+.score-row + .score-row { border-top:0; border-left:1px solid var(--line); }
+.score-row .who { min-width:0; font-size:10px; }
+.score-row .caps { gap:0; }
+.score-row .caps i { font-size:11px; }
+.score-row .plus { font-size:10px; }
+.panel { grid-area:panel; min-height:90px; height:auto; }
+.panel-head:has(.quick-level) { padding:4px 8px; gap:5px; }
+.panel-head .t,.panel-head .n { font-size:11px; letter-spacing:0; white-space:nowrap; }
+.panel-head .quick-level button { min-height:32px; padding:4px 10px; font-size:12px; }
+.moves { max-height:160px; }
+.empty-state { padding:10px 4px; height:auto; }
+.empty-state .es-glyph,.empty-state .es-sub { display:none; }
+.empty-state .es-title { font-size:11px; }
+@media (orientation:landscape) {
+  .app { max-width:480px; }
 }
 </style>
 </head>
 <body>
 <div class="space-scene" aria-hidden="true"><div class="planet"></div><div class="moon"></div></div>
-<div class="rotate-guide" role="status">
-  <div class="rotate-planet" aria-hidden="true"></div>
-  <div class="phone-shape" aria-hidden="true">↻</div>
-  <h2>탐험 준비! 폰을 돌려 주세요</h2>
-  <p>가로로 들면 우주 체스가 시작돼요.</p>
-  <small>화면이 안 돌아가면 아이폰의 세로 방향 잠금을 꺼 주세요.</small>
-</div>
+
 
 <div class="app">
   <header class="top">
@@ -1018,7 +889,7 @@ body::before{background:radial-gradient(ellipse at 80% 10%,#313275 0,transparent
     </div>
   </div>
 
-  <p class="note">기물을 누르고, 빛나는 칸을 누르면 이동해요. 폰은 가로로 사용해 주세요. 진영을 바꾼 뒤에는 새 게임을 시작해 주세요.</p>
+  <p class="note">기물을 누르고, 빛나는 칸을 누르면 이동해요. 폰은 세로로 사용해 주세요. 진영을 바꾼 뒤에는 새 게임을 시작해 주세요.</p>
 
   <button class="btn primary wide" id="applyNew" type="button">새 게임 시작</button>
 </section>
