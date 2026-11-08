@@ -80,4 +80,5 @@ grid=Array.from({length:H},()=>Array(W).fill(null));queue=['T','O','I'];drawNext
 // 검증 도구는 주소에 ?test=1을 넣었을 때만 활성화됩니다.
 if(new URLSearchParams(location.search).has('test'))window.gameTest={start:startGame,move,rotate,drop,down,pause,resume,collides,lock,getState:()=>({state,grid:structuredClone(grid),piece:structuredClone(piece),score,lines,level,queue:[...queue],mode}),setBoard:(g)=>{grid=g.map(r=>r.slice())},setPiece:p=>{piece=structuredClone(p)},setMode:m=>{mode=m}};
 </script>
-</body></html>
+</body>
+</html>
