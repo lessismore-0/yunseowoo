@@ -168,6 +168,29 @@ h1.logo{
 .result-lines{font-size:16px; color:var(--ink-soft); line-height:1.7; margin:8px 0 12px}
 .result-stars{font-size:38px; letter-spacing:6px; color:var(--gold); text-shadow:0 2px 0 rgba(74,52,35,.25)}
 .result-stars .off{color:#E4D6BF; text-shadow:none}
+.victory-banner{display:none;}
+.victory .modal-card{border-color:#906019;background:#FFF8DC;}
+.victory .victory-banner{display:block;color:#936015;font-size:18px;letter-spacing:2px;margin-bottom:8px;}
+.victory .victory-banner svg{display:block;width:76px;height:76px;margin:0 auto 6px;}
+.victory .result-title{font-size:clamp(28px,7vw,38px);color:#267645;}
+.victory .result-stars{animation:celebrate-stars .8s ease-out 2;}
+.victory .result-avatars .avatar-frame{animation:victory-hop .7s ease-in-out 3;}
+.victory .result-avatars .avatar-frame:nth-child(2){animation-delay:.18s;}
+.victory-note{font-size:18px;line-height:1.5;color:#6A4C25;margin:8px 0;}
+@keyframes celebrate-stars{0%,100%{transform:scale(1)}50%{transform:scale(1.2) rotate(-5deg)}}
+@keyframes victory-hop{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+@media (orientation:landscape) and (max-height:600px){
+  .victory .modal-card{max-width:650px;padding:12px 20px;}
+  .victory .victory-banner{font-size:14px;margin:0;}
+  .victory .victory-banner svg{display:inline-block;width:30px;height:30px;vertical-align:middle;margin:0 8px 0 0;}
+  .victory .result-avatars{margin:5px 0;}
+  .victory .result-avatars .avatar-frame{width:44px;height:44px;}
+  .victory .result-title{font-size:28px;margin:0;}
+  .victory .result-stars{font-size:26px;}
+  .victory .result-lines{font-size:13px;line-height:1.4;margin:5px 0;}
+  .victory-note{font-size:15px;margin:4px 0;}
+  .victory .result-btns .btn{font-size:15px;min-height:44px;padding:6px 14px;}
+}
 .result-btns{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:6px}
 .rule-item{display:flex; gap:12px; align-items:center; text-align:left; background:#fff; border:3px solid var(--ink); border-radius:18px; padding:10px 12px; margin:10px 0}
 .rule-item svg{width:74px; height:74px; flex:none}
@@ -299,8 +322,12 @@ h1.logo{
   </section>
 
   <!-- 결과 모달 -->
-  <div class="modal hidden" id="modal-result">
+  <div class="modal hidden" id="modal-result" role="dialog" aria-modal="true" aria-labelledby="result-title">
     <div class="modal-card">
+      <div class="victory-banner" aria-hidden="true">
+        <svg viewBox="0 0 100 100"><path d="M25 18H12v18q0 20 24 20M75 18h13v18q0 20-24 20" fill="none" stroke="#B27A20" stroke-width="7"/><path d="M25 12h50v27q0 26-25 26T25 39Z" fill="#FFC93C" stroke="#8A5A2B" stroke-width="4"/><path d="M50 65v17M32 88h36" stroke="#8A5A2B" stroke-width="8" stroke-linecap="round"/><path d="m50 24 5 10 11 2-8 8 2 11-10-5-10 5 2-11-8-8 11-2Z" fill="#FFF8DC"/></svg>
+        바둑냥 승리 축하 파티
+      </div>
       <div class="result-avatars">
         <div class="avatar-frame" id="r-p-avatar"></div>
         <div class="avatar-frame" id="r-a-avatar"></div>
@@ -756,6 +783,7 @@ const pick = a => a[(Math.random()*a.length)|0];
 
 /* ---------------- 게임 진행 ---------------- */
 function startGame(stage, level, char){
+  $('#confetti-layer').innerHTML='';
   S.stage=stage; S.level=level; S.char=char||SAVE.char||'cat';
   const st=STAGES[stage];
   S.N=st.N; S.komi=st.komi; S.goal=st.goal;
@@ -919,12 +947,14 @@ function endGame(reason){
   if(stars>(SAVE.stars[S.stage]||0)){ SAVE.stars[S.stage]=stars; persist(); }
   $('#r-p-avatar').innerHTML=avatarSVG(S.char, res==='win'?'happy':res==='lose'?'sad':'idle');
   $('#r-a-avatar').innerHTML=avatarSVG('robot', res==='lose'?'sad':res==='win'?'happy':'idle', LEVELS[S.level].color);
-  $('#result-title').textContent = res==='win'?'이겼다!': res==='lose'?'아쉽다…':'무승부!';
+  $('#modal-result').classList.toggle('victory',res==='win');
+  $('#result-title').textContent = res==='win'?'이겼어요! 축하해요!': res==='lose'?'아쉽다…':'무승부!';
   $('#result-title').style.color = res==='win'?'#2c8a4f': res==='lose'?'#c0475b':'#4A3423';
   $('#result-stars').innerHTML = '★'.repeat(stars) + `<span class="off">${'★'.repeat(2-stars)}</span>`;
-  $('#result-lines').innerHTML = lines.join('<br>') + (res==='win'?'<br>정말 잘했어요!':'');
+  $('#result-lines').innerHTML = (res==='win'?'<p class="victory-note">끝까지 생각해서 이뤄 낸 멋진 승리예요!<br>짝꿍과 냥봇이 함께 축하해요!</p>':'') + lines.join('<br>');
   $('#btn-next').classList.toggle('hidden', !(S.stage<4));
   $('#modal-result').classList.remove('hidden');
+  $('#btn-again').focus({preventScroll:true});
   setFace('player', res==='win'?'happy':res==='lose'?'sad':'idle');
   setFace('ai', res==='lose'?'sad':res==='win'?'happy':'idle');
   updatePanels();
