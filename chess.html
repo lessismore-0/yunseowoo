@@ -744,7 +744,7 @@ body::before{background:radial-gradient(ellipse at 80% 10%,#313275 0,transparent
 @media(orientation:landscape) and (max-height:350px){.app{grid-template-rows:36px 24px 66px minmax(0,1fr) 42px;row-gap:6px;padding-top:7px;padding-bottom:11px;column-gap:18px}.board-frame{height:calc(100dvh - 24px);padding:14px}.brand h1{font-size:18px}.brand p{font-size:10px}.mark{height:32px;width:32px}.score-row{height:32px}.btn{height:42px}.empty-state .es-glyph{display:none}.empty-state .es-title{font-size:12px}.empty-state .es-sub{font-size:10px}.panel-head{padding:5px 10px}.icon-btn{height:36px}}
 @media(orientation:portrait) and (max-width:1024px){.app{visibility:hidden;pointer-events:none}.rotate-guide{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px;background:radial-gradient(ellipse at top,#34477b88,transparent 70%)}.rotate-guide h2{font-size:22px;line-height:1.5;margin:0 0 8px;letter-spacing:-.04em}.rotate-guide p{font-size:15px;color:#d4e7ff;margin:0 0 24px}.rotate-guide small{max-width:260px;font-size:12px;line-height:1.7;color:#a6bfdf}}
 
-/* 가로 화면: 체스판 50% / 정보 50% */
+/* 가로 화면: 체스판 60% / 정보 40% */
 @media (orientation: landscape) {
   .app {
     width: 100%;
@@ -753,7 +753,7 @@ body::before{background:radial-gradient(ellipse at 80% 10%,#313275 0,transparent
     height: 100dvh;
 
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
     grid-template-rows: 38px 26px 64px minmax(0, 1fr) 44px;
     grid-template-areas:
       "board top"
@@ -904,6 +904,15 @@ body::before{background:radial-gradient(ellipse at 80% 10%,#313275 0,transparent
     height: 44px;
     font-size: 12px;
   }
+}
+
+@media (orientation: landscape) {
+  .brand h1 { font-size: clamp(13px, 2vw, 17px); }
+  .brand { gap: 5px; }
+  .panel-head .quick-level button { padding: 4px 5px; font-size: 10px; }
+  .panel-head .t, .panel-head .n { font-size: 9px; }
+  .panel-head:has(.quick-level) { padding: 4px; gap: 3px; }
+  .empty-state .es-title { font-size: 10px; }
 }
 </style>
 </head>
