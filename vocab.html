@@ -143,6 +143,15 @@ textarea.inp{min-height:180px;resize:vertical;line-height:1.6}
 .bk-card .bk-txt{flex:1;min-width:0;text-align:left}
 .bk-card small{color:var(--muted);display:block;font-size:14px}
 .bk-card .later{display:block;margin-top:2px;font-size:13px;color:var(--blue-d);font-weight:700;text-decoration:underline;min-height:28px}
+.gwrap{position:relative;margin-top:10px}
+.gcv{display:block;width:100%;border-radius:12px;touch-action:none;background:#eee;-webkit-user-select:none;user-select:none}
+.loupe{position:absolute;top:8px;width:132px;height:132px;border-radius:50%;border:3px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,.35);pointer-events:none;background:#fff}
+.stepper{display:flex;align-items:center;justify-content:center;gap:14px;margin:14px 0 6px}
+.stepper span{font-weight:800}
+.stepper button{width:52px;height:52px;border-radius:14px;background:var(--blue-l);font-size:26px;font-weight:800;color:var(--blue-d)}
+.stepper b{font-size:26px;min-width:44px;text-align:center}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:13px;font-weight:700;margin-top:8px}
+.legend i{display:inline-block;width:14px;height:4px;border-radius:2px;vertical-align:middle;margin-right:4px}
 @media(min-width:600px){#modal{align-items:center}.big{min-height:150px}}
 @media(max-width:360px){.big span{font-size:19px}.q-word{font-size:34px}}
 </style>
@@ -235,7 +244,7 @@ function render(){
   after();
 }
 function after(){
-  if(V.name==='add'&&A.img){const c=$('#prev');if(c)drawPrev(c);}
+  if(V.name==='add'&&A.img){const c=$('#prev');if(c)drawPrev(c);if(A.grid)setupGrid();}
   if(V.name==='quiz'){
     if(Q.fb)$('#nextBtn')?.focus({preventScroll:true});
     else{const i=$('#ans');if(i&&!i.value)i.focus({preventScroll:true});}
@@ -325,6 +334,7 @@ let A={};
 function resetAdd(gid,typed){A={gid:gid||(S.groups.length?S.groups[S.groups.length-1].id:'__new'),newName:weekName(),img:null,rot:0,rows:null,busy:false,typed:'',typedMode:!!typed,mode:'table'};}
 function vAdd(){
   const opts=S.groups.slice().reverse().map(g=>`<option value="${g.id}" ${A.gid===g.id?'selected':''}>${esc(g.name)}</option>`).join('');
+  if(A.grid)return vGrid();
   let body='';
   if(A.rows){
     const miss=A.rows.filter(r=>r.en.trim()&&!r.ko.trim()).length;
@@ -343,6 +353,7 @@ function vAdd(){
     ${miss?`<p class="small center" style="color:#d04848;font-weight:700">뜻이 빈 줄이 ${miss}개 있어요.</p>`:''}
     <div class="stack">
       <button class="btn green full" data-a="saveRows">💾 단어장에 저장하기</button>
+      ${A.img?`<button class="btn soft full" data-a="gridOpen">📐 칸을 직접 맞춰서 다시 읽기 (더 정확해요)</button>`:''}
       ${A.img?`<button class="btn ghost full sm" data-a="reOcr">🔄 결과가 이상해요 · ${A.mode==='text'?'표':'줄글'} 방식으로 다시 읽기</button>`:''}
       <button class="btn ghost full sm" data-a="addRestart">↩︎ 처음부터 다시</button>
     </div>`;
@@ -358,7 +369,8 @@ function vAdd(){
     </div>
     <p class="small muted center">글자가 바로 서 있게 돌린 뒤 눌러 주세요.</p>
     <div class="stack">
-      <button class="btn blue full" data-a="ocr" ${A.busy?'disabled':''}>🔍 글자 읽기</button>
+      <button class="btn blue full" data-a="ocr" ${A.busy?'disabled':''}>🔍 자동으로 읽기</button>
+      <button class="btn soft full" data-a="gridOpen" ${A.busy?'disabled':''}>📐 칸을 직접 맞추고 읽기 (더 정확해요)</button>
       <button class="btn ghost full sm" data-a="pickPhoto" ${A.busy?'disabled':''}>📷 다른 사진 고르기</button>
     </div>`;
   }else if(A.typedMode){
@@ -452,6 +464,7 @@ async function runOcr(){
       const {data}=await worker.recognize(c);
       const t=parseTable(data.words||[],c.width);
       if(t){
+        if(t.guess){A.guess=t.guess;A.guessRot=A.rot;}
         rows=t.rows;
         {
           stage='뜻을 한 번 더 꼼꼼히 읽고 있어요… 🔍 ';
@@ -481,6 +494,272 @@ async function runOcr(){
     toast(rows.length?`단어 ${rows.length}개를 찾았어요!`:'단어를 찾지 못했어요. 직접 적어 주세요.');
   }catch(e){console.error(e);toast('글자 읽기에 실패했어요. 인터넷 연결을 확인해 주세요.');}
   try{if(worker)await worker.terminate();if(kw)await kw.terminate();}catch(e){}
+  A.busy=false;render();
+}
+
+/* ========== 표 칸 직접 맞추기 ========== */
+/* 선은 양 끝 위치로 저장해요: 세로선 {t:위쪽 x, b:아래쪽 x}, 가로선 {l:왼쪽 y, r:오른쪽 y} (0~1) */
+const vx=(c,y)=>c.t+(c.b-c.t)*y,hy=(h,x)=>h.l+(h.r-h.l)*x;
+const evenLines=(n,a={l:0,r:0},b={l:1,r:1})=>Array.from({length:n+1},(_,i)=>({l:a.l+(b.l-a.l)*i/n,r:a.r+(b.r-a.r)*i/n}));
+const cloneG=o=>JSON.parse(JSON.stringify(o));
+function openGrid(){
+  A.base=prepCanvas();
+  const W=A.base.width,H=A.base.height,G=A.guessRot===A.rot?A.guess:null,S0=A.gridSaved&&A.gridSaved.rot===A.rot?A.gridSaved:null;
+  const corners=S0?S0.corners:G?G.corners:[{x:W*.08,y:H*.22},{x:W*.92,y:H*.22},{x:W*.92,y:H*.88},{x:W*.08,y:H*.88}];
+  const rows=S0?S0.rows:G?G.rows:10;
+  const cols=S0?cloneG(S0.cols):(G?G.cols:[.1,.43,.995]).map(v=>({t:v,b:v}));
+  A.grid={step:1,corners:corners.map(c=>({x:c.x,y:c.y})),cols,rows,hl:S0?cloneG(S0.hl):evenLines(rows),sel:null,warpKey:S0?S0.warpKey:null,auto:S0?S0.auto:null};
+  A.gridOrig=cloneG(A.grid);
+  window.scrollTo(0,0);render();
+}
+function solveH(src,dst){
+  const M=[],b=[];
+  for(let i=0;i<4;i++){const [u,v]=dst[i],[x,y]=src[i];M.push([u,v,1,0,0,0,-u*x,-v*x]);b.push(x);M.push([0,0,0,u,v,1,-u*y,-v*y]);b.push(y);}
+  for(let i=0;i<8;i++){
+    let p=i;for(let r=i+1;r<8;r++)if(Math.abs(M[r][i])>Math.abs(M[p][i]))p=r;
+    [M[i],M[p]]=[M[p],M[i]];[b[i],b[p]]=[b[p],b[i]];
+    for(let r=0;r<8;r++){if(r===i)continue;const f=M[r][i]/M[i][i];for(let c=i;c<8;c++)M[r][c]-=f*M[i][c];b[r]-=f*b[i];}
+  }
+  return b.map((v,i)=>v/M[i][i]).concat(1);
+}
+/* 네 모서리 안쪽을 반듯한 직사각형으로 펴요 */
+function warpTable(){
+  const [tl,tr,br,bl]=A.grid.corners,base=A.base,d=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+  let W=Math.max(d(tl,tr),d(bl,br)),H=Math.max(d(tl,bl),d(tr,br));
+  const sc=Math.min(1.5,2000/Math.max(W,H));W=Math.max(60,Math.round(W*sc));H=Math.max(60,Math.round(H*sc));
+  const h=solveH([[tl.x,tl.y],[tr.x,tr.y],[br.x,br.y],[bl.x,bl.y]],[[0,0],[W,0],[W,H],[0,H]]);
+  const sw=base.width,sh=base.height,sd=base.getContext('2d').getImageData(0,0,sw,sh).data;
+  const out=document.createElement('canvas');out.width=W;out.height=H;
+  const ox=out.getContext('2d'),od=ox.createImageData(W,H),o=od.data;
+  for(let v=0;v<H;v++)for(let u=0;u<W;u++){
+    const z=h[6]*u+h[7]*v+1,x=(h[0]*u+h[1]*v+h[2])/z,y=(h[3]*u+h[4]*v+h[5])/z;
+    let val=255;
+    if(x>=0&&y>=0&&x<sw-1&&y<sh-1){const x0=x|0,y0=y|0,fx=x-x0,fy=y-y0,i=(y0*sw+x0)*4,j=i+sw*4;
+      val=(sd[i]*(1-fx)+sd[i+4]*fx)*(1-fy)+(sd[j]*(1-fx)+sd[j+4]*fx)*fy;}
+    const k=(v*W+u)*4;o[k]=o[k+1]=o[k+2]=val;o[k+3]=255;
+  }
+  ox.putImageData(od,0,0);return out;
+}
+/* 펴진 표에서 표 선 찾기 (조금 기울어진 선도 찾아요) */
+function findLines(d,W,H,vertical){
+  const L=vertical?W:H,M=vertical?H:W,best=new Float32Array(L),bt=new Float32Array(L),step=3;
+  const dk=(q,pp)=>pp>=0&&pp<L&&d[vertical?q*W+pp:pp*W+q]<128;
+  for(let a=-3;a<=3.01;a+=.5){
+    const t=Math.tan(a*Math.PI/180);
+    for(let p=0;p<L;p++){
+      let n=0,tot=0;
+      for(let q=0;q<M;q+=step){const pp=Math.round(p+(q-M/2)*t);if(pp<0||pp>=L)continue;tot++;if(dk(q,pp)||dk(q,pp-1)||dk(q,pp+1))n++;}
+      if(tot>M/step*.6){const f=n/tot;if(f>best[p]){best[p]=f;bt[p]=t;}}
+    }
+  }
+  const out=[],gap=Math.max(4,Math.round(L*.015));
+  for(let p=0;p<L;p++){
+    if(best[p]<.55)continue;let ok=true;
+    for(let k=Math.max(0,p-gap);k<=Math.min(L-1,p+gap);k++)if(best[k]>best[p]||(best[k]===best[p]&&k<p)){ok=false;break;}
+    if(ok)out.push({a:(p-M/2*bt[p])/L,b:(p+M/2*bt[p])/L,m:p/L});
+  }
+  return out;
+}
+function detectGrid(c){
+  const W=c.width,H=c.height,id=c.getContext('2d').getImageData(0,0,W,H).data,d=new Uint8Array(W*H);
+  for(let i=0;i<W*H;i++)d[i]=id[i*4];
+  const vs=findLines(d,W,H,true),hs=findLines(d,W,H,false),res={};
+  const bounds=ls=>{const b=ls.slice();if(!b.length||b[0].m>.03)b.unshift({a:0,b:0,m:0});if(b[b.length-1].m<.97)b.push({a:1,b:1,m:1});return b;};
+  /* 세로: 가장 넓은 칸 = 뜻, 그 바로 왼쪽 칸 = 영어 */
+  const vb=bounds(vs),cols=[];
+  for(let i=0;i<vb.length-1;i++)if(vb[i+1].m-vb[i].m>=.04)cols.push([vb[i],vb[i+1]]);
+  if(cols.length>=2){
+    let m=0;cols.forEach((c,i)=>{if(c[1].m-c[0].m>cols[m][1].m-cols[m][0].m)m=i;});
+    if(m>0)res.cols=[cols[m-1][0],cols[m][0],cols[m][1]].map(l=>({t:l.a,b:l.b}));
+  }
+  /* 가로: 너무 얇은 줄(겹친 선, 가장자리)은 합쳐요 */
+  const hb=bounds(hs);
+  if(hb.length>=3){
+    const med=median(hb.slice(1).map((v,i)=>v.m-hb[i].m));
+    const kept=[hb[0]];for(let i=1;i<hb.length-1;i++)if(hb[i].m-kept[kept.length-1].m>=med*.4)kept.push(hb[i]);
+    if(hb[hb.length-1].m-kept[kept.length-1].m>=med*.4)kept.push(hb[hb.length-1]);else kept[kept.length-1]=hb[hb.length-1];
+    if(kept.length>=3&&kept[1].m-kept[0].m<med*.4)kept.shift();
+    if(kept.length>=2){res.hl=kept.map(l=>({l:l.a,r:l.b}));res.rows=kept.length-1;}
+  }
+  return res;
+}
+function vGrid(){
+  const g=A.grid,busy=A.busy;
+  const head=`<header class="top"><button class="icon-btn" data-a="gCancel" aria-label="닫기" ${busy?'disabled':''}>✕</button><div class="title">📐 칸 직접 맞추기</div></header>`;
+  if(g.step===1)return `${head}
+    <div class="card">
+      <p class="label">1단계 · 네 모서리 맞추기</p>
+      <p class="small muted" style="margin:-4px 0 0">제목 줄(No. · Word · Meaning)은 빼고, <b>단어가 적힌 칸만</b> 감싸도록 동그라미 4개를 끌어서 표의 모서리에 맞춰 주세요.</p>
+      <div class="gwrap"><canvas id="gcv" class="gcv"></canvas><canvas id="loupe" class="loupe" hidden></canvas></div>
+    </div>
+    <div class="stack">
+      <button class="btn blue full" data-a="gNext">다음 → 칸 나누기</button>
+      <button class="btn ghost full sm" data-a="gReset">↺ 처음 위치로</button>
+    </div>`;
+  return `${head}
+    <div class="card">
+      <p class="label">2단계 · 칸 나누기</p>
+      <p class="small muted" style="margin:-4px 0 0">선을 끌어서 사진 속 표 선에 맞춰 주세요. <b>선 가운데</b>를 끌면 이동, <b>끝부분</b>을 끌면 기울기가 바뀌어요. 줄 수가 다르면 아래 −/＋로 바꿔요.</p>
+      <div class="legend"><span><i style="background:#2F7FD8"></i>영어 칸</span><span><i style="background:#18A058"></i>뜻 칸</span><span><i style="background:#FF6B3D"></i>줄 경계</span></div>
+      <div class="gwrap"><canvas id="gcv" class="gcv"></canvas><canvas id="loupe" class="loupe" hidden></canvas></div>
+      <div class="stepper"><span>단어 줄 수</span><button data-a="gRows" data-d="-1" aria-label="줄 빼기" ${busy?'disabled':''}>−</button><b>${g.rows}</b><button data-a="gRows" data-d="1" aria-label="줄 더하기" ${busy?'disabled':''}>＋</button></div>
+      <button class="btn ghost full sm" data-a="gEven" ${busy?'disabled':''}>가로선 고르게 나누기</button>
+      ${busy?`<div class="progress"><i id="pbar"></i></div><p id="pmsg" class="center small muted" style="margin:0">읽기 준비 중…</p>`:''}
+    </div>
+    <div class="stack">
+      <button class="btn green full" data-a="gRead" ${busy?'disabled':''} style="min-height:62px;font-size:19px">✅ 이 칸대로 읽기</button>
+      <div class="row2"><button class="btn ghost sm" data-a="gBack" ${busy?'disabled':''}>← 모서리 다시</button><button class="btn ghost sm" data-a="gReset" ${busy?'disabled':''}>↺ 처음 위치로</button></div>
+    </div>`;
+}
+let GV=null,gDrag=null;
+function setupGrid(){
+  const cv=$('#gcv');if(!cv)return;
+  const g=A.grid,src=g.step===1?A.base:A.warp;
+  const cw=cv.parentElement.clientWidth,dpr=window.devicePixelRatio||1,scale=cw/src.width;
+  cv.style.height=src.height*scale+'px';cv.width=Math.round(cw*dpr);cv.height=Math.round(src.height*scale*dpr);
+  GV={cv,ctx:cv.getContext('2d'),src,scale,dpr,loupe:$('#loupe')};
+  drawGrid();
+  cv.onpointerdown=gDown;cv.onpointermove=gMove;cv.onpointerup=cv.onpointercancel=gUp;
+}
+function drawScene(ctx,s,ox,oy){
+  const g=A.grid,src=GV.src,W=src.width,H=src.height,px=GV.dpr/s;
+  ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#ddd';ctx.fillRect(0,0,ctx.canvas.width,ctx.canvas.height);
+  ctx.setTransform(s,0,0,s,-ox,-oy);ctx.drawImage(src,0,0);
+  if(g.step===1){
+    const c=g.corners;
+    ctx.beginPath();ctx.rect(0,0,W,H);ctx.moveTo(c[0].x,c[0].y);for(let i=3;i>=0;i--)ctx.lineTo(c[i].x,c[i].y);ctx.closePath();
+    ctx.fillStyle='rgba(20,20,40,.38)';ctx.fill('evenodd');
+    ctx.beginPath();c.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();
+    ctx.lineWidth=3*px;ctx.strokeStyle='#4DA3FF';ctx.stroke();
+    c.forEach((p,i)=>{const on=g.sel&&g.sel.i===i;ctx.beginPath();ctx.arc(p.x,p.y,(on?17:14)*px,0,7);ctx.fillStyle=on?'rgba(255,213,74,.55)':'rgba(77,163,255,.35)';ctx.fill();ctx.lineWidth=3*px;ctx.strokeStyle=on?'#E0A800':'#2F7FD8';ctx.stroke();
+      ctx.beginPath();ctx.arc(p.x,p.y,2.5*px,0,7);ctx.fillStyle='#fff';ctx.fill();});
+  }else{
+    const C=g.cols,poly=(l,r)=>{ctx.beginPath();ctx.moveTo(l.t*W,0);ctx.lineTo(r.t*W,0);ctx.lineTo(r.b*W,H);ctx.lineTo(l.b*W,H);ctx.closePath();};
+    poly(C[0],C[1]);ctx.fillStyle='rgba(77,163,255,.13)';ctx.fill();
+    poly(C[1],C[2]);ctx.fillStyle='rgba(46,189,114,.13)';ctx.fill();
+    const knob=(x,y)=>{ctx.beginPath();ctx.arc(x,y,8*px,0,7);ctx.fillStyle='#FFD54A';ctx.fill();ctx.lineWidth=2*px;ctx.strokeStyle='#B88A00';ctx.stroke();};
+    g.hl.forEach((v,i)=>{const on=g.sel&&g.sel.t==='h'&&g.sel.i===i;ctx.beginPath();ctx.moveTo(0,v.l*H);ctx.lineTo(W,v.r*H);ctx.lineWidth=(on?5:2.5)*px;ctx.strokeStyle=on?'#E0A800':'#FF6B3D';ctx.stroke();if(on){knob(10*px,v.l*H);knob(W-10*px,v.r*H);}});
+    const colC=['#2F7FD8','#7A5AF8','#18A058'];
+    C.forEach((v,j)=>{const on=g.sel&&g.sel.t==='v'&&g.sel.i===j;ctx.beginPath();ctx.moveTo(v.t*W,0);ctx.lineTo(v.b*W,H);ctx.lineWidth=(on?5:3)*px;ctx.strokeStyle=on?'#E0A800':colC[j];ctx.stroke();if(on){knob(v.t*W,10*px);knob(v.b*W,H-10*px);}});
+    ctx.font=`bold ${13*px}px sans-serif`;ctx.textBaseline='middle';
+    for(let i=0;i<g.rows;i++){const y=(g.hl[i].l+g.hl[i+1].l)/2*H,t=String(i+1),tw=ctx.measureText(t).width;
+      ctx.fillStyle='rgba(255,107,61,.9)';ctx.beginPath();ctx.arc(12*px,y,10*px,0,7);ctx.fill();ctx.fillStyle='#fff';ctx.fillText(t,12*px-tw/2,y);}
+  }
+}
+function drawGrid(){if(GV)drawScene(GV.ctx,GV.scale*GV.dpr,0,0);}
+function gPoint(e){const r=GV.cv.getBoundingClientRect();return {x:(e.clientX-r.left)/GV.scale,y:(e.clientY-r.top)/GV.scale};}
+function gHit(p){
+  const g=A.grid,thr=30/GV.scale,W=GV.src.width,H=GV.src.height,xn=p.x/W,yn=p.y/H;
+  if(g.step===1){let best=null;g.corners.forEach((c,i)=>{const d=Math.hypot(c.x-p.x,c.y-p.y);if(d<thr*1.5&&(!best||d<best.d))best={t:'c',i,d,dx:c.x-p.x,dy:c.y-p.y};});return best;}
+  let best=null;
+  g.cols.forEach((c,i)=>{const d=Math.abs(vx(c,yn)*W-p.x);if(d<thr&&(!best||d<best.d))best={t:'v',i,d,part:yn<.18?'a':yn>.82?'b':'m'};});
+  g.hl.forEach((h,i)=>{const d=Math.abs(hy(h,xn)*H-p.y);if(d<thr&&(!best||d<best.d))best={t:'h',i,d,part:xn<.18?'a':xn>.82?'b':'m'};});
+  if(best&&best.t!=='c'){best.orig=cloneG(best.t==='v'?g.cols[best.i]:g.hl[best.i]);best.p0={x:xn,y:yn};}
+  return best;
+}
+function gApply(p){
+  const g=A.grid,h=gDrag,W=GV.src.width,H=GV.src.height,xn=Math.min(1,Math.max(0,p.x/W)),yn=Math.min(1,Math.max(0,p.y/H));
+  if(h.t==='c'){const c=g.corners[h.i];c.x=Math.min(W-1,Math.max(0,p.x+h.dx));c.y=Math.min(H-1,Math.max(0,p.y+h.dy));return;}
+  const cl=v=>Math.min(1,Math.max(0,v));
+  if(h.t==='v'){
+    const L=g.cols,o=h.orig,n={t:o.t,b:o.b};
+    if(h.part==='m'){const d=xn-h.p0.x;n.t=o.t+d;n.b=o.b+d;}
+    else if(h.part==='a')n.t=(xn-o.b*yn)/Math.max(.05,1-yn);
+    else n.b=(xn-o.t*(1-yn))/Math.max(.05,yn);
+    const lo=h.i?L[h.i-1]:null,hi=h.i<L.length-1?L[h.i+1]:null;
+    for(const k of ['t','b']){let v=cl(n[k]);if(lo)v=Math.max(v,lo[k]+.03);if(hi)v=Math.min(v,hi[k]-.03);n[k]=v;}
+    L[h.i]=n;
+  }else{
+    const L=g.hl,o=h.orig,n={l:o.l,r:o.r};
+    if(h.part==='m'){const d=yn-h.p0.y;n.l=o.l+d;n.r=o.r+d;}
+    else if(h.part==='a')n.l=(yn-o.r*xn)/Math.max(.05,1-xn);
+    else n.r=(yn-o.l*(1-xn))/Math.max(.05,xn);
+    const lo=h.i?L[h.i-1]:null,hi=h.i<L.length-1?L[h.i+1]:null;
+    for(const k of ['l','r']){let v=cl(n[k]);if(lo)v=Math.max(v,lo[k]+.01);if(hi)v=Math.min(v,hi[k]-.01);n[k]=v;}
+    L[h.i]=n;
+  }
+}
+function gLoupe(p){
+  const L=GV.loupe;if(!L)return;
+  const css=132,dpr=GV.dpr;L.width=L.height=css*dpr;L.hidden=false;
+  const cssX=p.x*GV.scale;L.style.left=cssX<GV.cv.clientWidth/2?'auto':'8px';L.style.right=cssX<GV.cv.clientWidth/2?'8px':'auto';
+  const s=GV.scale*dpr*2.6,ctx=L.getContext('2d');
+  drawScene(ctx,s,p.x*s-L.width/2,p.y*s-L.height/2);
+  ctx.setTransform(1,0,0,1,0,0);ctx.strokeStyle='rgba(0,0,0,.6)';ctx.lineWidth=1.5*dpr;
+  const m=L.width/2;ctx.beginPath();ctx.moveTo(m-12*dpr,m);ctx.lineTo(m+12*dpr,m);ctx.moveTo(m,m-12*dpr);ctx.lineTo(m,m+12*dpr);ctx.stroke();
+}
+function gFocus(){const g=A.grid,h=gDrag;if(h.t==='c')return g.corners[h.i];const W=GV.src.width,H=GV.src.height;return h.t==='v'?{x:vx(g.cols[h.i],h.py/H)*W,y:h.py}:{x:h.px,y:hy(g.hl[h.i],h.px/W)*H};}
+function gDown(e){
+  if(A.busy)return;
+  const p=gPoint(e),h=gHit(p);if(!h)return;
+  e.preventDefault();gDrag={...h,px:p.x,py:p.y};A.grid.sel=h;
+  GV.cv.setPointerCapture(e.pointerId);drawGrid();gLoupe(gFocus());
+}
+function gMove(e){if(!gDrag)return;e.preventDefault();const p=gPoint(e);gDrag.px=p.x;gDrag.py=p.y;gApply(p);drawGrid();gLoupe(gFocus());}
+function gUp(){if(!gDrag)return;gDrag=null;if(GV.loupe)GV.loupe.hidden=true;drawGrid();}
+window.addEventListener('resize',()=>{if(V.name==='add'&&A.grid&&!gDrag)setupGrid();});
+
+/* 칸 잘라 읽기: 표 선을 지우고, 빈칸은 건너뛰어요 */
+function stripLines(x,w,h){
+  const d=x.getImageData(0,0,w,h),p=d.data;
+  for(let y=0;y<h;y++){let n=0;for(let i=0;i<w;i++)if(p[(y*w+i)*4]<140)n++;if(n>w*.55)for(let i=0;i<w;i++)p[(y*w+i)*4]=p[(y*w+i)*4+1]=p[(y*w+i)*4+2]=255;}
+  for(let i=0;i<w;i++){let n=0;for(let y=0;y<h;y++)if(p[(y*w+i)*4]<140)n++;if(n>h*.55)for(let y=0;y<h;y++)p[(y*w+i)*4]=p[(y*w+i)*4+1]=p[(y*w+i)*4+2]=255;}
+  x.putImageData(d,0,0);
+  let dark=0;for(let i=0;i<p.length;i+=4)if(p[i]<128)dark++;
+  return dark/(w*h);
+}
+function cropCell(src,x0,y0,x1,y1){
+  x0=Math.max(0,Math.round(x0));x1=Math.min(src.width,Math.round(x1));y0=Math.max(0,Math.round(y0));y1=Math.min(src.height,Math.round(y1));
+  const w=x1-x0,h=y1-y0;if(w<8||h<8)return null;
+  const k=h<80?Math.min(3,80/h):h>220?220/h:1,pad=14;
+  const c=document.createElement('canvas');c.width=Math.round(w*k)+pad*2;c.height=Math.round(h*k)+pad*2;
+  const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.imageSmoothingQuality='high';
+  x.drawImage(src,x0,y0,w,h,pad,pad,w*k,h*k);
+  return stripLines(x,c.width,c.height)<.004?null:c;
+}
+function cleanCellEn(t){
+  let s=t.replace(/[’`]/g,"'").replace(/[^A-Za-z'\-~ ]/g,' ').replace(/\s+/g,' ').trim();
+  s=s.replace(/^(?:[lI|] )+/,'').replace(/(?: [lI|])+$/,'').replace(/^[-'~ ]+|[-' ]+$/g,'').trim();
+  if(s===s.toUpperCase()&&s.length>1)s=s.toLowerCase();
+  return s.split(' ').map(w=>splitGlued(w)||w).join(' ');
+}
+async function readGrid(){
+  const g=A.grid;A.busy=true;render();
+  let ew,kw;
+  try{
+    setProgress(.02,'읽기 도구를 준비하고 있어요…');
+    if(!window.Tesseract)await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js');
+    const prep=m=>{if(/load|initializ/i.test(m.status))setProgress((m.progress||0)*.1,'읽기 도구를 준비하고 있어요 (처음 한 번은 조금 오래 걸려요)');};
+    ew=await Tesseract.createWorker('eng',1,{logger:prep});
+    await ew.setParameters({tessedit_pageseg_mode:'7',preserve_interword_spaces:'1',tessedit_char_whitelist:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz '-~"});
+    kw=await Tesseract.createWorker('kor',1,{logger:prep});
+    await kw.setParameters({tessedit_pageseg_mode:'7',preserve_interword_spaces:'1'});
+    const cp=document.createElement('canvas');cp.width=A.warp.width;cp.height=A.warp.height;cp.getContext('2d').drawImage(A.warp,0,0);
+    const src=cleanInk(cp),W=src.width,H=src.height,rows=[];
+    for(let r=0;r<g.rows;r++){
+      setProgress(.1+.9*r/g.rows,`${r+1} / ${g.rows}번째 줄을 읽고 있어요… 📖`);
+      const C=g.cols,h0=g.hl[r],h1=g.hl[r+1],iw=W*.006;
+      const cell=(a,b)=>{ /* 그 줄 위치에서의 선 위치로 칸을 잘라요 */
+        let yc=(hy(h0,.5)+hy(h1,.5))/2;
+        const xc=(vx(a,yc)+vx(b,yc))/2,y0=hy(h0,xc)*H,y1=hy(h1,xc)*H,ih=(y1-y0)*.07;yc=(y0+y1)/2/H;
+        const xa=Math.max(vx(a,y0/H),vx(a,y1/H))*W,xb=Math.min(vx(b,y0/H),vx(b,y1/H))*W;
+        return cropCell(src,xa+iw,y0+ih,xb-iw,y1-ih);
+      };
+      const enC=cell(C[0],C[1]),koC=cell(C[1],C[2]);
+      let en='',ko='',conf=100;
+      if(enC){const {data}=await ew.recognize(enC);en=cleanCellEn(data.text||'');conf=Math.min(conf,data.confidence);}
+      if(koC){const {data}=await kw.recognize(koC);
+        ko=tidyMeaning(joinKo((data.words||[]).filter(w=>(/[가-힣]/.test(w.text)&&w.confidence>=30)||/^[,;()~]+$/.test(w.text.trim())).map(w=>({t:w.text.trim(),b:w.bbox}))));
+        conf=Math.min(conf,data.confidence);}
+      if(/^(no|word|words|meaning|meanings)$/i.test(en)&&!ko)continue;
+      if(en||ko)rows.push({en,ko,check:!en||!ko||conf<65});
+    }
+    setProgress(1,'다 읽었어요!');
+    A.gridSaved=cloneG({corners:g.corners,cols:g.cols,rows:g.rows,hl:g.hl,rot:A.rot,warpKey:g.warpKey,auto:g.auto});
+    A.grid=null;A.rows=rows.length?rows:[{en:'',ko:''}];
+    toast(rows.length?`단어 ${rows.length}개를 읽었어요!`:'글자를 찾지 못했어요. 칸을 다시 맞춰 주세요.');
+  }catch(e){console.error(e);toast('글자 읽기에 실패했어요. 인터넷 연결을 확인해 주세요.');}
+  try{if(ew)await ew.terminate();if(kw)await kw.terminate();}catch(e){}
   A.busy=false;render();
 }
 
@@ -543,7 +822,7 @@ function parseTable(words,W){
     const kk=koList.filter(t=>t.ko);
     const conf=kk.length?kk.reduce((s,t)=>s+t.c,0)/kk.length:0;
     if(!en||en.replace(/[^A-Za-z]/g,'').length<2)continue;
-    rows.push({en:/^[A-Z]+$/.test(en)&&en.length>1?en.toLowerCase():en,ko,conf:glued?Math.min(conf,60):conf,yc:a.yc});
+    rows.push({en:/^[A-Z]+$/.test(en)&&en.length>1?en.toLowerCase():en,ko,conf:glued?Math.min(conf,60):conf,yc:a.yc,x0:a.b.x0,kr:kk.length?Math.max(...kk.map(t=>t.b.x1)):0});
     boxes.push({off:kk.length?median(kk.map(t=>t.yc))-a.yc:null,yc:a.yc});
   }
   /* 뜻 칸 위치: 뜻을 못 읽은 행은 이웃 행의 기울기(영단어와 뜻의 높이 차)를 빌려 와요 */
@@ -556,7 +835,7 @@ function parseTable(words,W){
       for(let j=i+1;j<boxes.length;j++)if(boxes[j].off!=null){nx=boxes[j].off;break;}
       off=pv!=null&&nx!=null?(pv+nx)/2:(pv??nx??0);
     }
-    const cy=b.yc+off;
+    const cy=b.yc+off;b.off2=off;
     Object.assign(b,{x:bx,y:Math.max(0,Math.round(cy-hh/2)),w:Math.max(10,Math.round(W*.98-bx)),h:hh});
   });
   /* 표 위아래(제목, 학원 이름 등)는 버려요 */
@@ -564,7 +843,19 @@ function parseTable(words,W){
   if(withKo.length<2)return null;
   const top=withKo[0].yc-pitch*1.3,bot=withKo[withKo.length-1].yc+pitch*1.3;
   const keep=rows.map(r=>r.yc>=top&&r.yc<=bot);
-  return {rows:rows.filter((r,i)=>keep[i]),boxes:boxes.filter((b,i)=>keep[i])};
+  const kr=rows.filter((r,i)=>keep[i]),kb=boxes.filter((b,i)=>keep[i]);
+  /* 칸 직접 맞추기를 위한 표 위치 추측 */
+  let guess=null;
+  try{
+    const f=kr[0],l=kr[kr.length-1],lm=(koX-enX)*.32,right=Math.min(W-2,Math.max(...kr.map(r=>r.kr))+W*.07);
+    const tilt=(r,b)=>b.off2*(right-r.x0)/Math.max(40,koX-r.x0);
+    const tl={x:Math.max(1,f.x0-lm),y:Math.max(1,f.yc-pitch/2)},bl={x:Math.max(1,l.x0-lm),y:l.yc+pitch/2};
+    const tr={x:right,y:Math.max(1,f.yc-pitch/2+tilt(f,kb[0]))},br={x:right,y:l.yc+pitch/2+tilt(l,kb[kb.length-1])};
+    const cl=v=>Math.min(.98,Math.max(.02,v)),wd=right-tl.x;
+    const c0=cl((f.x0-hMed*.4-tl.x)/wd),c1=Math.max(c0+.05,cl((koX-hMed*.4-tl.x)/wd));
+    guess={corners:[tl,tr,br,bl],cols:[c0,c1,.995],rows:kr.length};
+  }catch(e){}
+  return {rows:kr,boxes:kb,guess};
 }
 
 /* 사진/글에서 영어-뜻 짝 찾기 */
@@ -906,6 +1197,29 @@ const ACT={
   pickPhoto:()=>{const f=$('#photo');f.value='';f.click();},
   rot:b=>{A.rot+=+b.dataset.d;render();},
   ocr:()=>runOcr(),
+  gridOpen:()=>openGrid(),
+  gCancel:()=>{A.grid=null;render();},
+  gNext:()=>{const c=A.grid.corners,area=Math.abs((c[0].x*c[1].y-c[1].x*c[0].y)+(c[1].x*c[2].y-c[2].x*c[1].y)+(c[2].x*c[3].y-c[3].x*c[2].y)+(c[3].x*c[0].y-c[0].x*c[3].y))/2;
+    if(area<A.base.width*A.base.height*.02){toast('표를 더 크게 감싸 주세요');return;}
+    const g=A.grid,key=JSON.stringify(g.corners);
+    A.warp=warpTable();
+    if(g.warpKey!==key){
+      g.warpKey=key;
+      try{
+        const cp=document.createElement('canvas');cp.width=A.warp.width;cp.height=A.warp.height;cp.getContext('2d').drawImage(A.warp,0,0);
+        const det=detectGrid(cleanInk(cp));
+        if(det.cols)g.cols=det.cols;
+        if(det.hl){g.hl=det.hl;g.rows=det.rows;}
+        toast(det.cols&&det.hl?'표 선을 찾아서 맞춰 뒀어요. 확인해 주세요!':'표 선을 다 찾지 못했어요. 선을 끌어 맞춰 주세요.');
+      }catch(e){console.error(e);}
+      g.auto=cloneG({cols:g.cols,rows:g.rows,hl:g.hl});
+    }
+    g.step=2;g.sel=null;window.scrollTo(0,0);render();},
+  gBack:()=>{A.grid.step=1;A.grid.sel=null;render();},
+  gReset:()=>{const g=A.grid,o=cloneG(g.step===1?A.gridOrig:(g.auto||A.gridOrig));if(g.step===1)g.corners=o.corners;else{g.cols=o.cols;g.rows=o.rows;g.hl=o.hl;}g.sel=null;render();},
+  gRows:b=>{const g=A.grid,n=Math.min(40,Math.max(1,g.rows+ +b.dataset.d));if(n===g.rows)return;g.rows=n;g.hl=evenLines(n,g.hl[0],g.hl[g.hl.length-1]);g.sel=null;render();},
+  gEven:()=>{const g=A.grid;g.hl=evenLines(g.rows,g.hl[0],g.hl[g.hl.length-1]);render();},
+  gRead:()=>readGrid(),
   reOcr:()=>{A.mode=A.mode==='text'?'table':'text';A.rows=null;runOcr();toast(A.mode==='text'?'줄글 방식으로 다시 읽어요':'표 방식으로 다시 읽어요');},
   typedParse:()=>{const t=($('#typed')?.value||'').trim();A.typed=t;if(!t){toast('단어를 적어 주세요');return;}
     const rows=t.split(/\r?\n/).map(l=>{const m=l.trim().match(/^(.*?[A-Za-z][A-Za-z'’\-.~() ]*?)\s*[:=\-–\t]?\s*([~가-힣].*)$/);return m?{en:m[1].replace(/^\d+\s*[.)]\s*/,'').trim(),ko:m[2].trim()}:(l.trim()?{en:l.trim(),ko:'',check:true}:null);}).filter(Boolean);
@@ -963,7 +1277,7 @@ document.addEventListener('change',async e=>{
   if(t.id==='tgt'){A.gid=t.value;render();}
   else if(t.id==='photo'&&t.files[0]){
     const url=URL.createObjectURL(t.files[0]);const img=new Image();
-    img.onload=()=>{A.img=img;A.rot=0;A.rows=null;A.typedMode=false;render();};
+    img.onload=()=>{A.img=img;A.rot=0;A.rows=null;A.grid=null;A.guess=null;A.gridSaved=null;A.typedMode=false;render();};
     img.onerror=()=>toast('사진을 열 수 없어요. 다른 사진을 골라 주세요.');
     img.src=url;
   }else if(t.id==='importFile'&&t.files[0]){
