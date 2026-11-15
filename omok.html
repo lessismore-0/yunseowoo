@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>서우의 오목 놀이터</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="오목 놀이터">
+<meta name="theme-color" content="#FFF4E3">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FFF4E3; --board:#F2C46D; --board-dark:#D9A44A; --line:#7A5530;
+  --ink:#4A3423; --ink-soft:#7A5C42;
+  --coral:#FF7A59; --mint:#58C97B; --sky:#4FC3F7; --rose:#FF6B81; --gold:#FFC93C; --violet:#9B7BFF;
+  --card:#FFFFFF; --shadow:0 6px 0 rgba(74,52,35,.14);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:'Jua','Gaegu','Comic Sans MS',system-ui,sans-serif;
+  background:var(--paper); color:var(--ink);
+  min-height:100vh; min-height:100dvh;
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+  -webkit-text-size-adjust:100%; -webkit-user-select:none; user-select:none;
+  -webkit-touch-callout:none; overscroll-behavior-y:none;
+}
+body::before{
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(circle at 10% 8%, rgba(255,107,129,.20) 0, transparent 32%),
+    radial-gradient(circle at 90% 10%, rgba(155,123,255,.18) 0, transparent 30%),
+    radial-gradient(circle at 86% 92%, rgba(255,201,60,.22) 0, transparent 34%),
+    radial-gradient(circle at 6% 90%, rgba(88,201,123,.16) 0, transparent 30%);
+}
+#app{position:relative; z-index:1; max-width:1000px; margin:0 auto;
+  padding-top:max(16px, env(safe-area-inset-top));
+  padding-left:max(16px, env(safe-area-inset-left));
+  padding-right:max(16px, env(safe-area-inset-right));
+  padding-bottom:calc(36px + env(safe-area-inset-bottom));}
+.hidden{display:none !important}
+button{font-family:inherit; color:var(--ink); cursor:pointer; border:none; background:none; touch-action:manipulation}
+:focus-visible{outline:3px dashed var(--sky); outline-offset:3px}
+
+.card{background:var(--card); border:3px solid var(--ink); border-radius:24px; box-shadow:var(--shadow); padding:16px}
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  background:#fff; border:3px solid var(--ink); border-radius:999px;
+  padding:10px 20px; font-size:18px; box-shadow:0 5px 0 rgba(74,52,35,.22);
+  transition:transform .08s ease, box-shadow .08s ease;
+}
+.btn:active{transform:translateY(4px); box-shadow:0 1px 0 rgba(74,52,35,.22)}
+.btn.primary{background:var(--coral); color:#fff}
+.btn.mint{background:var(--mint); color:#fff}
+.btn.small{padding:7px 13px; font-size:15px}
+.btn:disabled{opacity:.45; cursor:not-allowed; transform:none; box-shadow:0 5px 0 rgba(74,52,35,.22)}
+.btn .cnt{background:var(--gold); border:2px solid var(--ink); border-radius:999px; font-size:12px; padding:0 6px; line-height:18px}
+
+/* ---------- 타이틀 ---------- */
+#screen-title{display:flex; flex-direction:column; align-items:center; gap:16px}
+.logo-wrap{display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center}
+.logo-stones{display:flex; gap:8px; margin-bottom:2px}
+.logo-stones span{width:34px; height:34px; border-radius:50%; border:2.5px solid var(--ink); animation:bob 2.2s ease-in-out infinite}
+.logo-stones span:nth-child(odd){background:radial-gradient(circle at 35% 30%, #777 0, #222 55%, #0a0a0a 100%)}
+.logo-stones span:nth-child(even){background:radial-gradient(circle at 35% 30%, #fff 0, #f1ece4 60%, #cfc6b8 100%)}
+.logo-stones span:nth-child(2){animation-delay:.15s}.logo-stones span:nth-child(3){animation-delay:.3s}
+.logo-stones span:nth-child(4){animation-delay:.45s}.logo-stones span:nth-child(5){animation-delay:.6s}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+h1.logo{margin:4px 0 0; font-size:clamp(34px,8vw,54px); letter-spacing:1px; line-height:1.15; text-shadow:3px 3px 0 rgba(255,201,60,.65)}
+.logo-sub{margin:0; font-size:17px; color:var(--ink-soft)}
+.select-card{width:100%; max-width:640px}
+.select-card h2{margin:0 0 12px; font-size:20px; display:flex; align-items:center; gap:8px}
+.num{width:28px; height:28px; border-radius:50%; background:var(--gold); border:2.5px solid var(--ink);
+  display:inline-flex; align-items:center; justify-content:center; font-size:15px; flex:none}
+.row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center}
+.pick{
+  position:relative; flex:1 1 120px; max-width:150px; background:#FFFDF7; border:3px solid var(--ink);
+  border-radius:20px; padding:12px 8px 10px; display:flex; flex-direction:column; align-items:center; gap:3px;
+  box-shadow:0 4px 0 rgba(74,52,35,.14); transition:transform .1s ease;
+}
+.pick:hover{transform:translateY(-2px)}
+.pick.sel{border-color:var(--coral); background:#FFF1E8; transform:translateY(-3px); box-shadow:0 0 0 4px rgba(255,122,89,.28),0 4px 0 rgba(74,52,35,.14)}
+.pick .emo{font-size:40px; line-height:1.1}
+.pick .pname{font-size:17px}
+.pick .plv{font-size:12.5px; border:2px solid var(--ink); border-radius:999px; padding:0 8px; background:#fff}
+.pick .pdesc{font-size:12.5px; color:var(--ink-soft); line-height:1.35; text-align:center}
+.pick .stars{font-size:13px; min-height:17px; color:var(--ink-soft)}
+.pick.mini{flex:1 1 90px; max-width:130px; padding:10px 6px}
+.pick.mini .pname{font-size:16px}
+.swatch{display:flex; gap:4px; height:34px; align-items:center}
+.swatch svg{width:30px; height:30px}
+.size-dots{width:40px; height:34px; display:grid; gap:2px; align-content:center; justify-content:center}
+.toggle-row{display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; margin-top:12px; font-size:15px; color:var(--ink-soft)}
+.switch{display:inline-flex; align-items:center; gap:8px; background:#FFFDF7; border:2.5px solid var(--ink); border-radius:999px; padding:6px 12px; font-size:15px; color:var(--ink)}
+.switch .knob{width:36px; height:20px; border-radius:999px; background:#E4D6BF; position:relative; border:2px solid var(--ink); transition:background .15s}
+.switch .knob::after{content:''; position:absolute; top:1px; left:1px; width:14px; height:14px; border-radius:50%; background:#fff; border:1.5px solid var(--ink); transition:left .15s}
+.switch.on .knob{background:var(--mint)} .switch.on .knob::after{left:17px}
+#start-row{display:flex; flex-direction:column; align-items:center; gap:10px}
+#btn-start{font-size:24px; padding:14px 44px}
+.tip{margin:0; font-size:13.5px; color:var(--ink-soft); text-align:center; max-width:460px; line-height:1.55}
+
+/* ---------- 게임 화면 ---------- */
+#screen-game{display:flex; flex-direction:column; gap:10px; align-items:center}
+.topbar{width:100%; display:flex; align-items:center; gap:8px}
+.topbar .spacer{flex:1}
+.players{width:100%; max-width:640px; display:flex; gap:10px; align-items:stretch}
+.pcard{flex:1; min-width:0; display:flex; align-items:center; gap:8px; background:#fff; border:3px solid var(--ink); border-radius:18px; padding:7px 10px; box-shadow:0 4px 0 rgba(74,52,35,.12); transition:all .2s}
+.pcard .pemo{font-size:30px; line-height:1}
+.pcard .pemo svg{width:32px; height:32px; display:block}
+.bubble-emo svg{width:36px; height:36px; display:block}
+.end-emo svg{width:80px; height:80px}
+.pcard .pinfo{min-width:0; display:flex; flex-direction:column}
+.pcard .pn{font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.pcard .ps{font-size:12.5px; color:var(--ink-soft); display:flex; align-items:center; gap:4px; white-space:nowrap}
+.pcard .ps svg{width:16px; height:16px; flex:none}
+.pcard.turn{border-color:var(--coral); background:#FFF1E8; box-shadow:0 0 0 4px rgba(255,122,89,.25),0 4px 0 rgba(74,52,35,.12); transform:translateY(-2px)}
+.vs{align-self:center; font-size:18px; color:var(--ink-soft)}
+.bubble-row{width:100%; max-width:640px; display:flex; align-items:center; gap:10px}
+.bubble-emo{font-size:34px; flex:none; transition:transform .2s}
+.bubble-emo.jump{animation:jump .5s ease}
+@keyframes jump{0%,100%{transform:translateY(0)}40%{transform:translateY(-10px) rotate(-8deg)}}
+.bubble{position:relative; flex:1; background:#fff; border:3px solid var(--ink); border-radius:18px; padding:9px 13px; font-size:16.5px; line-height:1.4; min-height:46px; display:flex; align-items:center}
+.bubble::before{content:''; position:absolute; left:-11px; top:50%; margin-top:-8px; border:8px solid transparent; border-right-color:var(--ink); border-left:0}
+.bubble::after{content:''; position:absolute; left:-6px; top:50%; margin-top:-6px; border:6px solid transparent; border-right-color:#fff; border-left:0}
+.bubble.warn{background:#FFF0F0; border-color:#D9404F}
+.bubble.warn::after{border-right-color:#FFF0F0}
+.bubble.good{background:#EEFBF1}
+.bubble.good::after{border-right-color:#EEFBF1}
+
+.board-wrap{position:relative; width:min(100%, 640px, calc(100dvh - 255px)); min-width:min(100%, 300px); aspect-ratio:1/1}
+#board-svg{width:100%; height:100%; display:block; touch-action:manipulation; cursor:pointer;
+  filter:drop-shadow(0 7px 0 rgba(74,52,35,.22))}
+.st{transform-box:fill-box; transform-origin:center}
+.st.drop{animation:drop .22s cubic-bezier(.3,1.6,.6,1)}
+@keyframes drop{0%{transform:scale(1.5); opacity:.2}100%{transform:scale(1); opacity:1}}
+.win-ring{animation:pulse 0.9s ease-in-out infinite; transform-box:fill-box; transform-origin:center}
+@keyframes pulse{0%,100%{opacity:1; transform:scale(1)}50%{opacity:.45; transform:scale(1.12)}}
+.danger{animation:pulse .7s ease-in-out infinite; transform-box:fill-box; transform-origin:center}
+.hint-star{animation:twinkle 1s ease-in-out infinite; transform-box:fill-box; transform-origin:center}
+@keyframes twinkle{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.25) rotate(18deg)}}
+.ghost-pulse{animation:gp 1s ease-in-out infinite}
+@keyframes gp{0%,100%{opacity:.75}50%{opacity:.4}}
+.controls{display:flex; gap:8px; flex-wrap:wrap; justify-content:center}
+#tap-tip{font-size:14px; color:var(--ink-soft); min-height:20px; text-align:center}
+
+/* ---------- 모달 ---------- */
+.modal{position:fixed; inset:0; z-index:50; background:rgba(74,52,35,.42); display:flex; align-items:center; justify-content:center; padding:16px}
+.modal .card{width:100%; max-width:420px; text-align:center; animation:popin .35s cubic-bezier(.3,1.5,.6,1); max-height:90dvh; overflow:auto}
+@keyframes popin{0%{transform:scale(.6); opacity:0}100%{transform:scale(1); opacity:1}}
+.end-emo{font-size:72px; line-height:1.1}
+.end-title{font-size:32px; margin:6px 0 2px}
+.end-msg{font-size:17px; color:var(--ink-soft); margin:4px 0 12px; line-height:1.5}
+.end-stars{font-size:28px; letter-spacing:3px; min-height:34px}
+.end-btns{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:8px}
+.rules{text-align:left; font-size:16px; line-height:1.6}
+.rules h3{margin:12px 0 4px; font-size:18px}
+.rules p{margin:0 0 6px}
+.mini-board{display:inline-grid; gap:2px; vertical-align:middle; margin:4px 0}
+#confetti-layer{position:fixed; inset:0; pointer-events:none; z-index:60; overflow:hidden}
+.confetti{position:absolute; top:-20px; width:10px; height:14px; border-radius:3px; animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+
+@media (max-width:420px){
+  .pick .emo{font-size:34px}
+  .pcard .pemo{font-size:26px}
+  .pcard .pn{font-size:15px}
+  .bubble{font-size:15.5px}
+  .btn.small{padding:6px 11px; font-size:14px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ 타이틀 화면 ============ -->
+  <section id="screen-title">
+    <div class="logo-wrap">
+      <div class="logo-stones"><span></span><span></span><span></span><span></span><span></span></div>
+      <h1 class="logo">서우의 오목 놀이터</h1>
+      <p class="logo-sub">가로, 세로, 대각선! 내 돌 5개를 먼저 이으면 이겨요</p>
+    </div>
+
+    <div class="card select-card">
+      <h2><span class="num">1</span>누구랑 할까요?</h2>
+      <div class="row" id="foe-row"></div>
+    </div>
+
+    <div class="card select-card">
+      <h2><span class="num">2</span>판과 돌을 골라요</h2>
+      <div class="row" id="size-row"></div>
+      <div style="height:12px"></div>
+      <div class="row" id="theme-row"></div>
+      <div class="toggle-row" id="first-wrap">
+        <span>누가 먼저?</span>
+        <div class="row" id="first-row" style="gap:8px"></div>
+      </div>
+      <div class="toggle-row">
+        <button class="switch" id="sw-confirm"><span class="knob"></span>두 번 눌러 놓기 (실수 방지)</button>
+      </div>
+    </div>
+
+    <div id="start-row">
+      <button class="btn" id="btn-continue">▶ 하던 판 이어서 하기</button>
+      <button class="btn primary" id="btn-start">오목 시작!</button>
+      <button class="btn small" id="btn-rules-title">📖 오목 하는 법</button>
+      <p class="tip">아이폰·아이패드라면 사파리 <b>공유</b> 버튼 → <b>홈 화면에 추가</b>를 누르면 앱처럼 켜져요!</p>
+    </div>
+  </section>
+
+  <!-- ============ 게임 화면 ============ -->
+  <section id="screen-game" class="hidden">
+    <header class="topbar">
+      <button class="btn small" id="btn-home">🏠 처음</button>
+      <div class="spacer"></div>
+      <button class="btn small" id="btn-rules">📖</button>
+      <button class="btn small" id="btn-sound">🔊</button>
+    </header>
+
+    <div class="players">
+      <div class="pcard" id="pc1"><div class="pemo"></div><div class="pinfo"><div class="pn"></div><div class="ps"></div></div></div>
+      <div class="vs">VS</div>
+      <div class="pcard" id="pc2"><div class="pemo"></div><div class="pinfo"><div class="pn"></div><div class="ps"></div></div></div>
+    </div>
+
+    <div class="bubble-row">
+      <div class="bubble-emo" id="bubble-emo">🐥</div>
+      <div class="bubble" id="bubble">안녕!</div>
+    </div>
+
+    <div class="board-wrap"><svg id="board-svg" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <div id="tap-tip"></div>
+
+    <div class="controls">
+      <button class="btn small" id="btn-undo">↩️ 무르기</button>
+      <button class="btn small" id="btn-hint">💡 힌트 <span class="cnt" id="hint-cnt">3</span></button>
+      <button class="btn small" id="btn-restart">🔄 새 판</button>
+    </div>
+  </section>
+</div>
+
+<!-- 끝났을 때 -->
+<div class="modal hidden" id="modal-end">
+  <div class="card">
+    <div class="end-emo" id="end-emo">🎉</div>
+    <div class="end-title" id="end-title">이겼다!</div>
+    <div class="end-stars" id="end-stars"></div>
+    <p class="end-msg" id="end-msg"></p>
+    <div class="end-btns">
+      <button class="btn small" id="btn-end-look">👀 판 보기</button>
+      <button class="btn primary" id="btn-end-again">한 판 더!</button>
+      <button class="btn" id="btn-end-home">🏠 처음으로</button>
+    </div>
+  </div>
+</div>
+
+<!-- 규칙 -->
+<div class="modal hidden" id="modal-rules">
+  <div class="card">
+    <div class="rules">
+      <h3 style="margin-top:0">🎯 이렇게 이겨요</h3>
+      <p>두 사람이 번갈아 가며 선이 만나는 곳에 돌을 하나씩 놓아요.</p>
+      <p><b>가로, 세로, 대각선</b> 중 한 줄로 내 돌 <b>5개</b>를 먼저 이으면 이겨요!</p>
+      <div style="text-align:center" id="rule-pic"></div>
+      <h3>🛡️ 막는 것도 중요해요</h3>
+      <p>친구 돌이 <b>4개</b> 이어졌으면 바로 막아요. 안 막으면 다음에 5개가 돼요.</p>
+      <p>친구 돌 <b>3개</b>가 나란히 있고 <b>양쪽 끝이 비어 있으면</b> 위험해요! 미리 한쪽을 막아요.</p>
+      <h3>✨ 이기는 꿀팁</h3>
+      <p>내 돌로 <b>양쪽이 열린 3개</b>를 두 개 한꺼번에 만들면, 친구가 한 번에 다 막을 수 없어요.</p>
+      <h3>🧸 버튼 설명</h3>
+      <p>↩️ <b>무르기</b>: 방금 둔 수를 취소해요.<br>💡 <b>힌트</b>: 좋은 자리를 반짝 알려 줘요 (한 판에 3번).</p>
+    </div>
+    <div class="end-btns"><button class="btn primary" id="btn-rules-close">알겠어요!</button></div>
+  </div>
+</div>
+
+<div id="confetti-layer"></div>
+<svg id="stone-defs" width="0" height="0" style="position:absolute;width:0;height:0" aria-hidden="true"><defs></defs></svg>
+
+<script>
+'use strict';
+const $=s=>document.querySelector(s);
+const pick=a=>a[(Math.random()*a.length)|0];
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+
+/* ---------------- 저장 ---------------- */
+const SAVE_KEY='omok-noriteo-v1';
+let SAVE={wins:{easy:0,normal:0,hard:0}, sound:true, foe:'easy', size:15, theme:'classic', first:'me', confirm:true, game:null};
+function loadSave(){ try{ const s=JSON.parse(localStorage.getItem(SAVE_KEY)); if(s&&typeof s==='object'){ SAVE=Object.assign(SAVE,s); SAVE.wins=Object.assign({easy:0,normal:0,hard:0},s.wins||{}); } }catch(e){} }
+function persist(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); }catch(e){} }
+
+/* ---------------- 상대 친구들 ---------------- */
+const FOES={
+  easy:  {emo:'🐥', name:'삐약이',    lv:'쉬움',   desc:'이제 막 오목을 배웠어요'},
+  normal:{emo:'🐰', name:'토순이',    lv:'보통',   desc:'제법 잘 막아요'},
+  hard:  {emo:'🦉', name:'부엉 박사', lv:'어려움', desc:'오목 박사님! 엄마 아빠도 도전'},
+  duo:   {emo:'👨‍👩‍👧', name:'둘이서',   lv:'함께',   desc:'한 화면에서 번갈아 두어요'},
+};
+const LINES={
+  hello:{easy:['안녕! 나랑 오목 하자! 삐약~','삐약! 나 열심히 할게!'],
+         normal:['안녕! 오늘은 내가 이길 거야~ 깡총!','토순이 준비 완료! 시작해 볼까?'],
+         hard:['부엉~ 오목 박사가 왔다네. 잘 부탁해요!','호오, 도전자로군! 실력을 보여 주렴.']},
+  think:['음… 어디 둘까?','흠흠, 생각 중…','어디가 좋을까~?','잠깐만 기다려 줘!'],
+  idle:{easy:['여기다! 삐약!','헤헤, 여기 놓을래!','이쯤이 좋아 보여~'],
+        normal:['여기 어때?','깡총! 여기 둘게!','네 차례야!'],
+        hard:['부엉. 여기로군.','자, 다음 수를 보여 주렴.','흠, 이 자리가 좋겠어.']},
+  four:['앗, 내 돌이 4개야! 막을 수 있을까?','짠! 4개 이어졌어!'],
+  three:['내 돌 3개가 나란히 있어! 양쪽이 비어 있는데?','후후, 3개 만들었지~'],
+  blockFour:['휴~ 겨우 막았다!','4개는 안 되지! 막았어!'],
+  blockThree:['거긴 내가 막을게!','3개는 미리 막아야지!'],
+  aiWin:{easy:['삐약! 내가 이겼다! 한 번 더 할래?'],normal:['깡총깡총! 내가 이겼지롱!'],hard:['부엉~ 좋은 대국이었어. 다시 도전하렴!']},
+  aiLose:{easy:['우와~ 너 진짜 잘한다! 삐약!'],normal:['으앙, 졌다! 너 오목 천재구나?'],hard:['놀랍군! 박사를 이기다니, 대단해!']},
+};
+
+/* ---------------- 돌 모양 ---------------- */
+const THEMES={
+  classic:{label:'바둑돌', names:['검은 돌','흰 돌'],
+    g:[['#7a7a7a','#262626','#050505'],['#ffffff','#f3eee6','#c9bfae']], stroke:['#000','#a89c88'], mark:['#fff','#e0533d']},
+  candy:{label:'사탕', names:['딸기 사탕','소다 사탕'],
+    g:[['#ffc2cc','#ff5d78','#d93253'],['#c8f1ff','#3fb8ef','#1784c4']], stroke:['#b52441','#136a9e'], mark:['#fff','#fff']},
+  animal:{label:'동물', names:['멍멍이','야옹이'], emoji:['🐶','🐱'],
+    g:[['#fff3d6','#ffd27a','#e8a53a'],['#f4ecff','#c9b2ff','#9b7bff']], stroke:['#a8731f','#6f52c9'], mark:['#e0533d','#e0533d']},
+};
+function gradDefs(id){
+  const t=THEMES[id]; let s='';
+  t.g.forEach((c,i)=>{ s+=`<radialGradient id="sg${i+1}-${id}" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="${c[0]}"/><stop offset=".55" stop-color="${c[1]}"/><stop offset="1" stop-color="${c[2]}"/></radialGradient>`; });
+  return s;
+}
+function stoneShape(x,y,r,c,themeId,extra){
+  const t=THEMES[themeId];
+  let s=`<circle cx="${x}" cy="${y}" r="${r}" fill="url(#sg${c}-${themeId})" stroke="${t.stroke[c-1]}" stroke-width="${r*0.07}"/>`;
+  if(t.emoji) s+=`<text x="${x}" y="${y+r*0.06}" text-anchor="middle" dominant-baseline="central" font-size="${r*1.25}">${t.emoji[c-1]}</text>`;
+  return `<g class="st ${extra||''}">${s}</g>`;
+}
+function stoneIcon(c,themeId,size){
+  const r=size/2-1.5;
+  return `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">${stoneShape(size/2,size/2,r,c,themeId)}</svg>`;
+}
+
+/* ---------------- 사운드 ---------------- */
+let AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return AC; }
+document.addEventListener('pointerdown', ()=>{ const a=ac(); if(a&&a.state==='suspended')a.resume(); });
+function tone(f,t,dur,type,vol){
+  const a=ac(); if(!a||!SAVE.sound)return;
+  const o=a.createOscillator(), g=a.createGain();
+  o.type=type||'sine'; o.frequency.value=f;
+  g.gain.setValueAtTime(vol||.18, a.currentTime+t);
+  g.gain.exponentialRampToValueAtTime(.001, a.currentTime+t+dur);
+  o.connect(g); g.connect(a.destination);
+  o.start(a.currentTime+t); o.stop(a.currentTime+t+dur+.05);
+}
+const snd={
+  stone(c){ tone(c===1?210:250,0,.09,'triangle',.3); tone(c===1?340:400,0,.05,'sine',.12); },
+  pop(){ tone(620,0,.06,'square',.06); },
+  warn(){ tone(440,0,.12,'square',.08); tone(440,.16,.12,'square',.08); },
+  hint(){ [880,1175,1568].forEach((f,i)=>tone(f,i*.07,.14,'sine',.12)); },
+  win(){ [523,659,784,1046,1318].forEach((f,i)=>tone(f,i*.12,.3,'triangle',.2)); },
+  lose(){ [392,330,262].forEach((f,i)=>tone(f,i*.18,.32,'sine',.16)); },
+};
+
+/* ================= 오목 규칙 & 인공지능 ================= */
+const DIRS=[[1,0],[0,1],[1,1],[1,-1]];
+let N=15;
+const inb=(x,y)=>x>=0&&y>=0&&x<N&&y<N;
+
+/* idx에 c를 놓았을 때 5개 이상 이어지는 줄 (없으면 null) */
+function winLineAt(b,idx,c){
+  const x0=idx%N, y0=(idx/N)|0;
+  for(const [dx,dy] of DIRS){
+    const line=[idx];
+    for(let k=1;;k++){ const x=x0+dx*k,y=y0+dy*k; if(!inb(x,y)||b[y*N+x]!==c)break; line.push(y*N+x); }
+    for(let k=1;;k++){ const x=x0-dx*k,y=y0-dy*k; if(!inb(x,y)||b[y*N+x]!==c)break; line.unshift(y*N+x); }
+    if(line.length>=5) return line;
+  }
+  return null;
+}
+
+/* 한 줄(9칸) 모양 분류 */
+const T={FIVE:0,OPEN4:1,FOUR:2,OPEN3:3,THREE:4,OPEN2:5,TWO:6,NONE:7};
+const PATS=[
+  ['11111'],
+  ['011110'],
+  ['11110','01111','11101','11011','10111'],
+  ['011100','001110','011010','010110'],
+  ['01110','11100','00111','11010','01011','10110','01101','10011','11001','10101'],
+  ['001100','011000','000110','001010','010100','010010'],
+  ['11000','00011','10100','00101','10010','01001','01100','00110','01010','10001'],
+];
+function lineType(b,x,y,dx,dy,c){
+  let s='';
+  for(let k=-4;k<=4;k++){
+    if(k===0){ s+='1'; continue; }
+    const nx=x+dx*k, ny=y+dy*k;
+    if(!inb(nx,ny)) s+='2';
+    else{ const v=b[ny*N+nx]; s+= v===0?'0':(v===c?'1':'2'); }
+  }
+  for(let t=0;t<PATS.length;t++){
+    for(const p of PATS[t]){
+      const L=p.length;
+      for(let i=Math.max(0,5-L);i<=Math.min(4,9-L);i++){
+        if(s.substr(i,L)===p) return t;
+      }
+    }
+  }
+  return T.NONE;
+}
+function shapeCounts(b,idx,c){
+  const x=idx%N, y=(idx/N)|0, cnt=[0,0,0,0,0,0,0,0];
+  for(const [dx,dy] of DIRS) cnt[lineType(b,x,y,dx,dy,c)]++;
+  return cnt;
+}
+/* attack: 내가 두면 / !attack: 상대가 여기 두면 (=막는 가치) */
+function shapeValue(cnt,attack){
+  const [F,O4,F4,O3,T3,O2,T2]=cnt;
+  if(F) return attack?1e9:1e8;
+  if(O4||F4>=2) return attack?1e7:5e6;
+  if(F4&&O3) return attack?6e6:2e6;
+  if(O3>=2) return attack?1e6:8e5;
+  return attack
+    ? F4*1.2e4 + O3*1.5e4 + T3*1500 + O2*800 + T2*150
+    : F4*5e3  + O3*4e3  + T3*600  + O2*500 + T2*80;
+}
+function candidates(b,r){
+  const out=[], seen=new Uint8Array(N*N); let any=false;
+  for(let i=0;i<N*N;i++){
+    if(!b[i]) continue; any=true;
+    const x=i%N, y=(i/N)|0;
+    for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){
+      const nx=x+dx, ny=y+dy; if(!inb(nx,ny))continue;
+      const j=ny*N+nx; if(!b[j]&&!seen[j]){ seen[j]=1; out.push(j); }
+    }
+  }
+  if(!any) out.push(((N/2)|0)*N+((N/2)|0));
+  return out;
+}
+function scoreMoves(b,c,defW){
+  const o=3-c, mid=(N-1)/2, res=[];
+  for(const i of candidates(b,2)){
+    const ca=shapeCounts(b,i,c), co=shapeCounts(b,i,o);
+    const x=i%N, y=(i/N)|0;
+    const center=(N-Math.abs(x-mid)-Math.abs(y-mid))*2;
+    res.push({i, s:shapeValue(ca,true)+shapeValue(co,false)*(defW==null?1:defW)+center, ca, co});
+  }
+  res.sort((a,b)=>b.s-a.s);
+  return res;
+}
+
+/* 5칸 창 훑기: 5가 되는 자리, 4를 만드는 자리 */
+function scanWins(b,c){
+  const fives=new Set();
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++)for(const [dx,dy] of DIRS){
+    const ex=x+dx*4, ey=y+dy*4; if(!inb(ex,ey))continue;
+    let mine=0, emp=-1, bad=false;
+    for(let k=0;k<5;k++){ const j=(y+dy*k)*N+(x+dx*k), v=b[j];
+      if(v===c)mine++; else if(v===0){ if(emp>=0){bad=true;break;} emp=j; } else {bad=true;break;} }
+    if(!bad&&mine===4&&emp>=0) fives.add(emp);
+  }
+  return fives;
+}
+function scanFourMoves(b,c){
+  const moves=new Set();
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++)for(const [dx,dy] of DIRS){
+    const ex=x+dx*4, ey=y+dy*4; if(!inb(ex,ey))continue;
+    let mine=0, e=[], bad=false;
+    for(let k=0;k<5;k++){ const j=(y+dy*k)*N+(x+dx*k), v=b[j];
+      if(v===c)mine++; else if(v===0)e.push(j); else {bad=true;break;} }
+    if(!bad&&mine===3&&e.length===2){ moves.add(e[0]); moves.add(e[1]); }
+  }
+  return moves;
+}
+/* 4로 계속 몰아붙여 이기는 길(VCF) 찾기 */
+let vcfNodes=0;
+function vcf(b,c,depth){
+  if(++vcfNodes>4000) return -1;
+  const my=scanWins(b,c);
+  if(my.size) return my.values().next().value;
+  if(depth<=0) return -1;
+  const opp=scanWins(b,3-c);
+  if(opp.size>1) return -1;
+  let moves=[...scanFourMoves(b,c)];
+  if(opp.size===1){ const f=opp.values().next().value; moves=moves.filter(m=>m===f); }
+  for(const m of moves){
+    b[m]=c;
+    const comp=scanWins(b,c);
+    let win=false;
+    if(comp.size>=2) win=true;
+    else if(comp.size===1){
+      const q=comp.values().next().value;
+      b[q]=3-c;
+      if(!winLineAt(b,q,3-c) && vcf(b,c,depth-1)>=0) win=true;
+      b[q]=0;
+    }
+    b[m]=0;
+    if(win) return m;
+    if(vcfNodes>4000) return -1;
+  }
+  return -1;
+}
+function findVCF(b,c,depth){ vcfNodes=0; const bb=Int8Array.from(b); return vcf(bb,c,depth); }
+
+function weightedPick(list,k){
+  const top=list.slice(0,Math.min(k,list.length));
+  const w=top.map((m,i)=>1/(i+1)); const tot=w.reduce((a,b)=>a+b,0);
+  let r=Math.random()*tot;
+  for(let i=0;i<top.length;i++){ r-=w[i]; if(r<=0) return top[i].i; }
+  return top[0].i;
+}
+
+/* 컴퓨터가 둘 자리 고르기 */
+function aiMove(b,c,level){
+  const o=3-c, stones=b.reduce((a,v)=>a+(v?1:0),0);
+  const mid=((N/2)|0)*N+((N/2)|0);
+  if(stones===0) return level==='easy' ? mid+pick([0,1,-1,N,-N]) : mid;
+  const myF=[...scanWins(b,c)], opF=[...scanWins(b,o)];
+
+  if(level==='easy'){
+    if(myF.length && Math.random()<0.85) return myF[0];
+    if(opF.length && Math.random()<0.7) return opF[0];
+    const list=scoreMoves(b,c,0.25).filter(m=>m.s<1e8 || Math.random()<0.5);
+    return weightedPick(list.length?list:scoreMoves(b,c,0.25),5);
+  }
+  if(myF.length) return myF[0];
+  if(opF.length) return opF[0];
+
+  if(level==='normal'){
+    let list=scoreMoves(b,c,1);
+    if(Math.random()<0.2){ /* 가끔 열린 3을 놓친다 */
+      list=scoreMoves(b,c,1).map(m=>(m.co[T.OPEN4]&&m.s<6e6)?Object.assign({},m,{s:m.s-5e6+3e3}):m).sort((a,b)=>b.s-a.s);
+    }
+    const best=list[0].s;
+    const near=list.filter(m=>m.s>=best*0.9).slice(0,3);
+    return pick(near).i;
+  }
+
+  /* hard */
+  const win=findVCF(b,c,10);
+  if(win>=0) return win;
+  const list=scoreMoves(b,c,1);
+  if(list[0].s>=6e6) return list[0].i;           /* 확실한 공격(열린 4 등) */
+  const threat=findVCF(b,o,8);
+  if(threat>=0){                                   /* 상대의 4-몰이를 미리 끊는다 */
+    const tries=list.slice(0,10);
+    if(!tries.some(m=>m.i===threat)) tries.push({i:threat});
+    for(const m of tries){
+      const bb=Int8Array.from(b); bb[m.i]=c;
+      vcfNodes=0;
+      if(vcf(bb,o,8)<0) return m.i;
+    }
+  }
+  const best=list[0].s;
+  const near=list.filter(m=>m.s>=best*0.97).slice(0,2);
+  return pick(near).i;
+}
+
+/* 플레이어용 힌트 */
+function hintFor(b,c){
+  const o=3-c;
+  const myF=[...scanWins(b,c)];
+  if(myF.length) return {i:myF[0], msg:'여기 두면 5개! 이길 수 있어요 ⭐'};
+  const opF=[...scanWins(b,o)];
+  if(opF.length) return {i:opF[0], msg:'친구 돌이 4개예요! 여기를 꼭 막아요 🛡️'};
+  const v=findVCF(b,c,8);
+  if(v>=0) return {i:v, msg:'여기서부터 4개를 계속 만들면 이길 수 있어요! 🔥'};
+  const list=scoreMoves(b,c,1); const m=list[0];
+  if(m.co[T.OPEN4]||m.co[T.FIVE]) return {i:m.i, msg:'친구 돌 3개가 양쪽이 열려 있어요. 여기를 막아요! 🛡️'};
+  if(m.ca[T.OPEN4]) return {i:m.i, msg:'여기 두면 양쪽이 열린 4개! 거의 이겼어요 ✨'};
+  if(m.ca[T.OPEN3]>=2||(m.ca[T.FOUR]&&m.ca[T.OPEN3])) return {i:m.i, msg:'여기 두면 두 줄을 한꺼번에 만들어요! 🌟'};
+  if(m.ca[T.OPEN3]) return {i:m.i, msg:'여기 두면 양쪽이 열린 3개가 돼요 ✨'};
+  return {i:m.i, msg:'여기가 좋아 보여요 ✨'};
+}
+
+/* ================= 게임 진행 ================= */
+const S={screen:'title', foe:'easy', N:15, theme:'classic', human:1, board:null, moves:[], turn:1,
+  over:false, winner:-1, winLine:null, busy:false, hints:3, ghost:-1, hintIdx:-1, danger:[], token:0, viewing:false};
+const VIEW=600;
+let CELL=40, MARG=40;
+const pos=i=>[MARG+(i%S.N)*CELL, MARG+((i/S.N)|0)*CELL];
+const isDuo=()=>S.foe==='duo';
+const humanTurn=()=>!S.over&&(isDuo()||S.turn===S.human);
+
+function nameOf(c){
+  if(isDuo()) return THEMES[S.theme].names[c-1];
+  return c===S.human ? '나' : FOES[S.foe].name;
+}
+function emoOf(c){
+  if(isDuo()) return stoneIcon(c,S.theme,40);
+  return c===S.human ? '😊' : FOES[S.foe].emo;
+}
+
+function hoshi(n){
+  const a=n>=15?3:(n>=13?3:2), b=n-1-a, m=(n-1)/2;
+  return [[a,a],[a,b],[b,a],[b,b],[m,m]];
+}
+function buildBoard(){
+  N=S.N; CELL=VIEW/(S.N+1); MARG=CELL;
+  const end=MARG+(S.N-1)*CELL;
+  let g=`<defs>
+    <linearGradient id="wood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F7CF7E"/><stop offset="1" stop-color="#E9B45A"/></linearGradient></defs>
+    <rect x="4" y="4" width="${VIEW-8}" height="${VIEW-8}" rx="26" fill="url(#wood)" stroke="#4A3423" stroke-width="6"/>`;
+  for(let i=0;i<S.N;i++){
+    const p=MARG+i*CELL;
+    g+=`<line x1="${MARG}" y1="${p}" x2="${end}" y2="${p}" stroke="#7A5530" stroke-width="${i===0||i===S.N-1?2.6:1.5}"/>`;
+    g+=`<line x1="${p}" y1="${MARG}" x2="${p}" y2="${end}" stroke="#7A5530" stroke-width="${i===0||i===S.N-1?2.6:1.5}"/>`;
+  }
+  for(const [x,y] of hoshi(S.N)) g+=`<circle cx="${MARG+x*CELL}" cy="${MARG+y*CELL}" r="${CELL*0.11}" fill="#7A5530"/>`;
+  g+=`<g id="g-stones"></g><g id="g-marks"></g><g id="g-ghost"></g>`;
+  const svg=$('#board-svg');
+  svg.setAttribute('viewBox',`0 0 ${VIEW} ${VIEW}`);
+  svg.innerHTML=g;
+}
+function renderStones(animIdx){
+  let s='';
+  S.moves.forEach((i,n)=>{
+    const [x,y]=pos(i);
+    s+=stoneShape(x,y,CELL*0.45,S.board[i],S.theme,i===animIdx?'drop':'');
+  });
+  $('#g-stones').innerHTML=s;
+  renderMarks();
+}
+function renderMarks(){
+  let s='';
+  const t=THEMES[S.theme];
+  if(S.moves.length && !S.winLine){
+    const last=S.moves[S.moves.length-1], [x,y]=pos(last), c=S.board[last];
+    if(t.emoji) s+=`<circle cx="${x}" cy="${y}" r="${CELL*0.47}" fill="none" stroke="${t.mark[c-1]}" stroke-width="${CELL*0.08}"/>`;
+    else s+=`<circle cx="${x}" cy="${y}" r="${CELL*0.13}" fill="${t.mark[c-1]}"/>`;
+  }
+  if(S.winLine){
+    const [x1,y1]=pos(S.winLine[0]), [x2,y2]=pos(S.winLine[S.winLine.length-1]);
+    s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#FF3D6E" stroke-width="${CELL*0.16}" stroke-linecap="round" opacity=".85"/>`;
+    for(const i of S.winLine){ const [x,y]=pos(i); s+=`<circle class="win-ring" cx="${x}" cy="${y}" r="${CELL*0.5}" fill="none" stroke="#FFC93C" stroke-width="${CELL*0.1}"/>`; }
+  }
+  for(const i of S.danger){
+    const [x,y]=pos(i);
+    s+=`<circle class="danger" cx="${x}" cy="${y}" r="${CELL*0.4}" fill="rgba(255,61,110,.22)" stroke="#FF3D6E" stroke-width="${CELL*0.08}" stroke-dasharray="${CELL*0.18} ${CELL*0.12}"/>`;
+  }
+  if(S.hintIdx>=0){
+    const [x,y]=pos(S.hintIdx), R=CELL*0.5, r=R*0.45;
+    let pts=''; for(let k=0;k<10;k++){ const a=-Math.PI/2+k*Math.PI/5, rr=k%2?r:R; pts+=`${x+Math.cos(a)*rr},${y+Math.sin(a)*rr} `; }
+    s+=`<polygon class="hint-star" points="${pts}" fill="#FFE066" stroke="#E0A800" stroke-width="2.5" stroke-linejoin="round"/>`;
+  }
+  $('#g-marks').innerHTML=s;
+}
+function renderGhost(idx,confirm){
+  const g=$('#g-ghost');
+  if(idx<0||!humanTurn()||S.board[idx]){ g.innerHTML=''; return; }
+  const [x,y]=pos(idx);
+  g.innerHTML=`<g opacity="${confirm?0.75:0.45}" class="${confirm?'ghost-pulse':''}">${stoneShape(x,y,CELL*0.45,S.turn,S.theme)}</g>`
+    +(confirm?`<circle cx="${x}" cy="${y}" r="${CELL*0.62}" fill="none" stroke="#FF7A59" stroke-width="3" stroke-dasharray="6 5"/>`:'');
+}
+
+function bubble(text,kind,who){
+  const b=$('#bubble'); b.textContent=text; b.className='bubble'+(kind?' '+kind:'');
+  const e=$('#bubble-emo');
+  e.innerHTML = who || (isDuo()?emoOf(S.turn):FOES[S.foe].emo);
+  e.classList.remove('jump'); void e.offsetWidth; e.classList.add('jump');
+}
+function updatePanels(){
+  for(const c of [1,2]){
+    const el=$('#pc'+c);
+    el.querySelector('.pemo').innerHTML=emoOf(c);
+    el.querySelector('.pn').textContent=nameOf(c);
+    el.querySelector('.ps').innerHTML=stoneIcon(c,S.theme,16)+(c===1?'먼저 둬요':'나중에 둬요');
+    el.classList.toggle('turn', !S.over && S.turn===c);
+  }
+  $('#btn-undo').disabled = S.busy || !canUndo();
+  $('#btn-hint').disabled = S.busy || S.over || !humanTurn() || S.hints<=0;
+  $('#hint-cnt').textContent=S.hints;
+  $('#btn-sound').textContent=SAVE.sound?'🔊':'🔇';
+}
+function canUndo(){
+  if(S.over && !isDuo() && S.winner===S.human) return false; /* 이긴 판은 무르지 않음 */
+  if(isDuo()) return S.moves.length>0;
+  return S.moves.some((_,n)=> (n%2===0?1:2)===S.human);
+}
+function saveGame(){
+  SAVE.game = S.over ? null : {foe:S.foe, N:S.N, theme:S.theme, human:S.human, moves:S.moves.slice(), hints:S.hints};
+  persist();
+}
+
+function startGame(opts){
+  S.token++;
+  S.foe=opts.foe; S.N=opts.N; S.theme=opts.theme;
+  S.human = isDuo()?0:(opts.human||1);
+  S.board=new Int8Array(S.N*S.N); S.moves=[]; S.turn=1;
+  S.over=false; S.winLine=null; S.busy=false; S.hints=opts.hints==null?3:opts.hints;
+  S.ghost=-1; S.hintIdx=-1; S.danger=[]; S.viewing=false;
+  N=S.N;
+  (opts.moves||[]).forEach((i,n)=>{ S.board[i]=(n%2===0)?1:2; S.moves.push(i); });
+  S.turn = S.moves.length%2===0?1:2;
+  $('#screen-title').classList.add('hidden'); $('#screen-game').classList.remove('hidden');
+  $('#modal-end').classList.add('hidden');
+  S.screen='game';
+  buildBoard(); renderStones(); updatePanels(); $('#tap-tip').textContent='';
+  window.scrollTo(0,0);
+  if(isDuo()) bubble(opts.moves&&opts.moves.length?`이어서 해요! ${nameOf(S.turn)} 차례예요.`:`${nameOf(1)}부터 시작해요! 번갈아 가며 놓아요.`);
+  else bubble(opts.moves&&opts.moves.length?'다시 왔구나! 이어서 하자~':pick(LINES.hello[S.foe]));
+  saveGame();
+  nextTurn();
+}
+
+function place(idx){
+  const c=S.turn;
+  S.board[idx]=c; S.moves.push(idx); S.winner=-1;
+  S.ghost=-1; S.hintIdx=-1; S.danger=[];
+  renderGhost(-1); renderStones(idx); snd.stone(c);
+  const line=winLineAt(S.board,idx,c);
+  if(line){ S.winLine=line; S.over=true; S.winner=c; renderMarks(); updatePanels(); saveGame(); endGame(c); return; }
+  if(S.moves.length>=S.N*S.N){ S.over=true; S.winner=0; updatePanels(); saveGame(); endGame(0); return; }
+  S.turn=3-c;
+  saveGame();
+}
+function handleHumanMove(idx){
+  if(!humanTurn()||S.busy||S.board[idx]) return;
+  place(idx);
+  if(S.over) return;
+  nextTurn();
+}
+async function nextTurn(){
+  updatePanels();
+  if(S.over) return;
+  if(isDuo()){
+    const o=3-S.turn, f=[...scanWins(S.board,o)];
+    if(f.length) bubble(`${nameOf(S.turn)} 차례! ${nameOf(o)}이(가) 4개예요. 막아야 해요!`,'warn',emoOf(S.turn));
+    else bubble(`${nameOf(S.turn)} 차례예요!`,'',emoOf(S.turn));
+    return;
+  }
+  if(S.turn===S.human){ coachHuman(); return; }
+  /* 컴퓨터 차례 */
+  const tk=S.token;
+  S.busy=true; updatePanels();
+  const b=S.board, ai=S.turn, me=S.human;
+  const beforeHumanF=[...scanWins(b,me)];
+  const beforeHumanO3=scoreMoves(b,me,0).filter(m=>m.ca[T.OPEN4]).map(m=>m.i);
+  if(S.moves.length>1) bubble(pick(LINES.think));
+  await wait(S.foe==='hard'?350:550+Math.random()*450);
+  if(tk!==S.token) return;
+  const t0=performance.now();
+  const idx=aiMove(b,ai,S.foe);
+  const spent=performance.now()-t0;
+  if(spent<250) await wait(250-spent);
+  if(tk!==S.token) return;
+  S.busy=false;
+  place(idx);
+  if(S.over) return;
+  /* 컴퓨터의 한마디 */
+  const myF=[...scanWins(S.board,ai)];
+  if(myF.length){
+    bubble(pick(LINES.four),'warn');
+    if(S.foe==='easy'){ S.danger=myF; renderMarks(); bubble('앗, 내 돌이 4개야! 빨간 자리를 막아야 해!','warn'); }
+    if(S.foe!=='hard') snd.warn();
+  }else if(beforeHumanF.includes(idx)) bubble(pick(LINES.blockFour));
+  else if(beforeHumanO3.includes(idx)) bubble(pick(LINES.blockThree));
+  else if(S.foe!=='hard' && scoreMoves(S.board,ai,0).some(m=>m.ca[T.OPEN4])) bubble(pick(LINES.three), S.foe==='easy'?'warn':'');
+  else bubble(pick(LINES.idle[S.foe]));
+  nextTurn();
+}
+function coachHuman(){
+  /* 아이가 이길 기회가 있을 때 쉬움 단계에서는 살짝 귀띔 */
+  if(S.foe==='easy' && !S.danger.length){
+    const mine=[...scanWins(S.board,S.human)];
+    if(mine.length) bubble('어? 너 이길 수 있는 자리가 있는 것 같아! 잘 찾아봐~','good');
+  }
+}
+
+function endGame(winner){
+  S.token++; S.busy=false;
+  const t=$('#end-title'), m=$('#end-msg'), e=$('#end-emo'), st=$('#end-stars');
+  st.textContent='';
+  if(winner===0){
+    e.textContent='🤝'; t.textContent='비겼어요!'; m.textContent='판이 꽉 찼어요. 둘 다 정말 잘했어요!';
+    bubble('우와, 판이 꽉 찼어! 무승부!'); snd.pop();
+  }else if(isDuo()){
+    e.innerHTML=emoOf(winner); t.textContent=`${nameOf(winner)} 승리!`;
+    m.textContent='5개를 먼저 이었어요! 박수 짝짝짝 👏'; snd.win(); confetti();
+    bubble(`${nameOf(winner)}이(가) 5개를 이었어요! 🎉`,'good',emoOf(winner));
+  }else if(winner===S.human){
+    SAVE.wins[S.foe]=(SAVE.wins[S.foe]||0)+1; persist();
+    e.textContent='🏆'; t.textContent='내가 이겼다!';
+    const w=SAVE.wins[S.foe];
+    st.textContent='⭐'.repeat(Math.min(w,5))+(w>5?` ×${w}`:'');
+    m.textContent=`${FOES[S.foe].name}에게 ${w}번째 승리! `+(S.foe==='easy'&&w>=3?'이제 토순이에게 도전해 볼까요? 🐰':S.foe==='normal'&&w>=3?'부엉 박사에게 도전해 볼까요? 🦉':'정말 멋져요!');
+    bubble(pick(LINES.aiLose[S.foe]),'good');
+    snd.win(); confetti();
+  }else{
+    e.textContent=FOES[S.foe].emo; t.textContent='아쉽다!';
+    m.textContent='괜찮아요! 친구 돌이 3개, 4개가 되면 먼저 막아 봐요. 💪';
+    bubble(pick(LINES.aiWin[S.foe]));
+    snd.lose();
+  }
+  updatePanels();
+  setTimeout(()=>{ if(S.over && S.screen==='game') $('#modal-end').classList.remove('hidden'); }, 1300);
+}
+
+function undo(){
+  if(S.busy||!canUndo()) return;
+  S.token++;
+  const popOne=()=>{ const i=S.moves.pop(); S.board[i]=0; };
+  if(S.over){ S.over=false; S.winLine=null; S.viewing=false; $('#tap-tip').textContent=''; }
+  if(isDuo()) popOne();
+  else{
+    /* 내 돌까지 되돌린다 */
+    do{ popOne(); }while(S.moves.length && (S.moves.length%2===0?1:2)!==S.human);
+  }
+  S.turn=S.moves.length%2===0?1:2;
+  S.danger=[]; S.hintIdx=-1; S.ghost=-1; renderGhost(-1);
+  renderStones(); snd.pop();
+  bubble(isDuo()?`한 수 물렀어요. ${nameOf(S.turn)} 차례예요!`:'괜찮아, 다시 생각해 봐!');
+  saveGame();
+  nextTurn();
+}
+function showHint(){
+  if(S.busy||S.over||!humanTurn()||S.hints<=0) return;
+  const h=hintFor(S.board,S.turn);
+  S.hints--; S.hintIdx=h.i; renderMarks(); snd.hint();
+  bubble(h.msg,'good','💡');
+  updatePanels(); saveGame();
+}
+function confetti(){
+  const layer=$('#confetti-layer');
+  const colors=['#FFC93C','#FF7A59','#4FC3F7','#58C97B','#FF6B81','#9B7BFF'];
+  for(let i=0;i<70;i++){
+    const c=document.createElement('div');
+    c.className='confetti';
+    c.style.left=Math.random()*100+'%';
+    c.style.background=pick(colors);
+    c.style.animationDuration=(2.2+Math.random()*1.6)+'s';
+    c.style.animationDelay=(Math.random()*0.8)+'s';
+    layer.appendChild(c);
+    setTimeout(()=>c.remove(), 4800);
+  }
+}
+
+/* ---------------- 판 터치 ---------------- */
+function boardPoint(e){
+  const rect=$('#board-svg').getBoundingClientRect();
+  const px=(e.clientX-rect.left)/rect.width*VIEW, py=(e.clientY-rect.top)/rect.height*VIEW;
+  const gx=Math.round((px-MARG)/CELL), gy=Math.round((py-MARG)/CELL);
+  if(gx<0||gy<0||gx>=S.N||gy>=S.N) return -1;
+  if(Math.hypot(px-(MARG+gx*CELL), py-(MARG+gy*CELL))>CELL*0.62) return -1;
+  return gy*S.N+gx;
+}
+let downPt=null;
+const svgEl=$('#board-svg');
+svgEl.addEventListener('pointerdown',e=>{ downPt={x:e.clientX,y:e.clientY}; });
+svgEl.addEventListener('pointerup',e=>{
+  if(!downPt) return;
+  const moved=Math.hypot(e.clientX-downPt.x,e.clientY-downPt.y); downPt=null;
+  if(moved>18) return;
+  if(S.screen!=='game'||S.busy||!humanTurn()) return;
+  const idx=boardPoint(e);
+  if(idx<0||S.board[idx]){ if(S.ghost>=0){ S.ghost=-1; renderGhost(-1); $('#tap-tip').textContent=''; } return; }
+  if(e.pointerType!=='mouse' && SAVE.confirm && S.ghost!==idx){
+    S.ghost=idx; renderGhost(idx,true); snd.pop();
+    $('#tap-tip').textContent='👆 한 번 더 누르면 놓여요';
+    return;
+  }
+  $('#tap-tip').textContent='';
+  handleHumanMove(idx);
+});
+svgEl.addEventListener('pointermove',e=>{
+  if(e.pointerType!=='mouse'||S.screen!=='game') return;
+  if(S.busy||!humanTurn()){ renderGhost(-1); return; }
+  renderGhost(boardPoint(e),false);
+});
+svgEl.addEventListener('pointerleave',e=>{ if(e.pointerType==='mouse') renderGhost(-1); });
+
+/* ---------------- 타이틀 ---------------- */
+function winsText(k){
+  const w=SAVE.wins[k]||0;
+  if(!w) return '<span style="opacity:.6">아직 승리 없음</span>';
+  return '⭐'.repeat(Math.min(w,3))+` ${w}승`;
+}
+function buildTitle(){
+  $('#foe-row').innerHTML=Object.entries(FOES).map(([k,f])=>`
+    <button class="pick ${SAVE.foe===k?'sel':''}" data-foe="${k}">
+      <div class="emo">${f.emo}</div><div class="pname">${f.name}</div>
+      <div class="plv">${f.lv}</div><div class="pdesc">${f.desc}</div>
+      ${k!=='duo'?`<div class="stars">${winsText(k)}</div>`:''}
+    </button>`).join('');
+  const sizes=[[11,'작은 판','처음 배울 때'],[13,'중간 판','조금 익숙하면'],[15,'큰 판','진짜 오목']];
+  $('#size-row').innerHTML=sizes.map(([n,l,d])=>`
+    <button class="pick mini ${SAVE.size===n?'sel':''}" data-size="${n}">
+      <div class="pname">${l}</div><div class="plv">${n}×${n}</div><div class="pdesc">${d}</div>
+    </button>`).join('');
+  $('#theme-row').innerHTML=Object.entries(THEMES).map(([k,t])=>`
+    <button class="pick mini ${SAVE.theme===k?'sel':''}" data-theme="${k}">
+      <div class="swatch">${stoneIcon(1,k,30)}${stoneIcon(2,k,30)}</div>
+      <div class="pname">${t.label}</div>
+    </button>`).join('');
+  $('#first-row').innerHTML=[['me','내가 먼저'],['foe','친구가 먼저']].map(([k,l])=>
+    `<button class="switch ${SAVE.first===k?'on':''}" data-first="${k}" style="padding:6px 14px">${l}</button>`).join('');
+  $('#first-wrap').classList.toggle('hidden', SAVE.foe==='duo');
+  $('#sw-confirm').classList.toggle('on', !!SAVE.confirm);
+  const g=SAVE.game;
+  $('#btn-continue').classList.toggle('hidden', !(g && g.moves && g.moves.length && FOES[g.foe]));
+}
+function showTitle(){
+  S.token++; S.screen='title'; S.busy=false;
+  $('#modal-end').classList.add('hidden');
+  $('#screen-game').classList.add('hidden'); $('#screen-title').classList.remove('hidden');
+  buildTitle(); window.scrollTo(0,0);
+}
+$('#screen-title').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  if(b.dataset.foe){ SAVE.foe=b.dataset.foe; }
+  else if(b.dataset.size){ SAVE.size=+b.dataset.size; }
+  else if(b.dataset.theme){ SAVE.theme=b.dataset.theme; }
+  else if(b.dataset.first){ SAVE.first=b.dataset.first; }
+  else if(b.id==='sw-confirm'){ SAVE.confirm=!SAVE.confirm; }
+  else return;
+  snd.pop(); persist(); buildTitle();
+});
+function newGameFromSettings(){
+  startGame({foe:SAVE.foe, N:SAVE.size, theme:SAVE.theme, human:SAVE.first==='me'?1:2});
+}
+$('#btn-start').addEventListener('click',()=>{ ac(); newGameFromSettings(); });
+$('#btn-continue').addEventListener('click',()=>{ const g=SAVE.game; if(!g) return; ac(); startGame(g); });
+
+/* ---------------- 버튼 ---------------- */
+$('#btn-home').addEventListener('click',showTitle);
+$('#btn-undo').addEventListener('click',undo);
+$('#btn-hint').addEventListener('click',showHint);
+$('#btn-restart').addEventListener('click',()=>{
+  if(S.moves.length>2 && !S.over && !confirm('지금 판을 그만두고 새로 시작할까요?')) return;
+  startGame({foe:S.foe, N:S.N, theme:S.theme, human:S.human||1});
+});
+$('#btn-sound').addEventListener('click',()=>{ SAVE.sound=!SAVE.sound; persist(); updatePanels(); snd.pop(); });
+$('#btn-end-again').addEventListener('click',()=>{
+  /* 한 판 더: 비기거나 진 경우 그대로, 둘이서는 먼저 두는 사람을 바꾸지 않음 */
+  startGame({foe:S.foe, N:S.N, theme:S.theme, human:S.human||1});
+});
+$('#btn-end-home').addEventListener('click',showTitle);
+$('#btn-end-look').addEventListener('click',()=>{ $('#modal-end').classList.add('hidden'); S.viewing=true; updatePanels(); $('#tap-tip').textContent='🔄 새 판을 누르면 다시 시작해요'; });
+function openRules(){
+  const pic=[0,0,0,0,0,0,0, 0,1,0,0,0,0,0, 0,0,1,2,0,0,0, 0,2,0,1,0,0,0, 0,0,2,0,1,0,0, 0,0,0,2,0,1,0, 0,0,0,0,0,0,0];
+  $('#rule-pic').innerHTML=`<svg viewBox="0 0 160 160" width="150" height="150" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="2" width="156" height="156" rx="14" fill="#F2C46D" stroke="#4A3423" stroke-width="3"/>
+    ${[0,1,2,3,4,5,6].map(i=>`<line x1="20" y1="${20+i*20}" x2="140" y2="${20+i*20}" stroke="#7A5530"/><line x1="${20+i*20}" y1="20" x2="${20+i*20}" y2="140" stroke="#7A5530"/>`).join('')}
+    ${pic.map((v,i)=>v?stoneShape(20+(i%7)*20,20+((i/7)|0)*20,8.5,v,'classic'):'').join('')}
+    <line x1="40" y1="40" x2="120" y2="120" stroke="#FF3D6E" stroke-width="4" stroke-linecap="round" opacity=".8"/></svg>`;
+  $('#modal-rules').classList.remove('hidden');
+}
+$('#btn-rules').addEventListener('click',openRules);
+$('#btn-rules-title').addEventListener('click',openRules);
+$('#btn-rules-close').addEventListener('click',()=>$('#modal-rules').classList.add('hidden'));
+$('#modal-rules').addEventListener('click',e=>{ if(e.target.id==='modal-rules') $('#modal-rules').classList.add('hidden'); });
+
+/* ---------------- 시작 ---------------- */
+/* 돌 그라데이션은 한 곳에만 정의해 모든 SVG가 함께 쓴다 */
+$('#stone-defs defs').innerHTML=Object.keys(THEMES).map(gradDefs).join('');
+loadSave();
+showTitle();
+</script>
+</body>
+</html>
