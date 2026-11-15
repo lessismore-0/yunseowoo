@@ -8,22 +8,29 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="오목 놀이터">
-<meta name="theme-color" content="#FFF4E3">
+<meta name="theme-color" content="#F6EEFF">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Hi+Melody&display=swap" rel="stylesheet">
 <style>
+/* 레이아웃: 가운데 한 줄, 파스텔 하늘 위에 떠 있는 유리 카드들 */
 :root{
-  --paper:#FFF4E3; --board:#F2C46D; --board-dark:#D9A44A; --line:#7A5530;
-  --ink:#4A3423; --ink-soft:#7A5C42;
-  --coral:#FF7A59; --mint:#58C97B; --sky:#4FC3F7; --rose:#FF6B81; --gold:#FFC93C; --violet:#9B7BFF;
-  --card:#FFFFFF; --shadow:0 6px 0 rgba(74,52,35,.14);
+  --blush:#FFF4F9; --lilac-bg:#F1EBFF; --mint-bg:#E9FBF4;
+  --ink:#3D2C5C; --ink-soft:#8A7AA8; --line:#EADFFF;
+  --pink:#FF6FAE; --lilac:#A98BFF; --mint:#4FCFAE; --peach:#FFB38A; --gold:#FFC94D; --danger:#FF4D7E;
+  --card:rgba(255,255,255,.82); --card-solid:#FFFFFF;
+  --grad:linear-gradient(135deg,#FF7EB6 0%,#C08BFF 55%,#8FA8FF 100%);
+  --shadow:0 10px 28px rgba(123,92,200,.16), 0 2px 6px rgba(123,92,200,.08);
+  --f-display:'Jua','Gowun Dodum',system-ui,sans-serif;
+  --f-body:'Gowun Dodum','Jua',system-ui,sans-serif;
+  --f-hand:'Hi Melody','Gowun Dodum',system-ui,sans-serif;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
 body{
-  font-family:'Jua','Gaegu','Comic Sans MS',system-ui,sans-serif;
-  background:var(--paper); color:var(--ink);
+  font-family:var(--f-body); color:var(--ink);
+  background:linear-gradient(160deg,var(--blush) 0%,var(--lilac-bg) 52%,var(--mint-bg) 100%) fixed;
+  background-color:var(--lilac-bg);
   min-height:100vh; min-height:100dvh;
   -webkit-font-smoothing:antialiased; overflow-x:hidden;
   -webkit-text-size-adjust:100%; -webkit-user-select:none; user-select:none;
@@ -32,110 +39,123 @@ body{
 body::before{
   content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
   background:
-    radial-gradient(circle at 10% 8%, rgba(255,107,129,.20) 0, transparent 32%),
-    radial-gradient(circle at 90% 10%, rgba(155,123,255,.18) 0, transparent 30%),
-    radial-gradient(circle at 86% 92%, rgba(255,201,60,.22) 0, transparent 34%),
-    radial-gradient(circle at 6% 90%, rgba(88,201,123,.16) 0, transparent 30%);
+    radial-gradient(circle at 12% 10%, rgba(255,126,182,.28) 0, transparent 30%),
+    radial-gradient(circle at 92% 18%, rgba(169,139,255,.26) 0, transparent 32%),
+    radial-gradient(circle at 80% 94%, rgba(79,207,174,.20) 0, transparent 34%),
+    radial-gradient(circle at 4% 86%, rgba(255,201,77,.18) 0, transparent 28%);
 }
+#sky{position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden}
+#sky span{position:absolute; color:#fff; text-shadow:0 0 8px rgba(192,139,255,.9); animation:twinkle-bg 3.2s ease-in-out infinite}
+@keyframes twinkle-bg{0%,100%{opacity:.25; transform:scale(.8)}50%{opacity:1; transform:scale(1.15)}}
 #app{position:relative; z-index:1; max-width:1000px; margin:0 auto;
   padding-top:max(16px, env(safe-area-inset-top));
   padding-left:max(16px, env(safe-area-inset-left));
   padding-right:max(16px, env(safe-area-inset-right));
   padding-bottom:calc(36px + env(safe-area-inset-bottom));}
 .hidden{display:none !important}
-button{font-family:inherit; color:var(--ink); cursor:pointer; border:none; background:none; touch-action:manipulation}
-:focus-visible{outline:3px dashed var(--sky); outline-offset:3px}
+button{font-family:var(--f-display); color:var(--ink); cursor:pointer; border:none; background:none; touch-action:manipulation}
+:focus-visible{outline:3px dashed var(--lilac); outline-offset:3px}
 
-.card{background:var(--card); border:3px solid var(--ink); border-radius:24px; box-shadow:var(--shadow); padding:16px}
+.card{background:var(--card); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+  border:1.5px solid rgba(255,255,255,.9); border-radius:26px; box-shadow:var(--shadow); padding:18px}
 .btn{
   display:inline-flex; align-items:center; justify-content:center; gap:6px;
-  background:#fff; border:3px solid var(--ink); border-radius:999px;
-  padding:10px 20px; font-size:18px; box-shadow:0 5px 0 rgba(74,52,35,.22);
-  transition:transform .08s ease, box-shadow .08s ease;
+  background:var(--card-solid); border:1.5px solid var(--line); border-radius:999px;
+  padding:10px 20px; font-size:17px; box-shadow:0 4px 12px rgba(123,92,200,.14);
+  transition:transform .1s ease, box-shadow .1s ease;
 }
-.btn:active{transform:translateY(4px); box-shadow:0 1px 0 rgba(74,52,35,.22)}
-.btn.primary{background:var(--coral); color:#fff}
-.btn.mint{background:var(--mint); color:#fff}
-.btn.small{padding:7px 13px; font-size:15px}
-.btn:disabled{opacity:.45; cursor:not-allowed; transform:none; box-shadow:0 5px 0 rgba(74,52,35,.22)}
-.btn .cnt{background:var(--gold); border:2px solid var(--ink); border-radius:999px; font-size:12px; padding:0 6px; line-height:18px}
+.btn:active{transform:scale(.95); box-shadow:0 2px 6px rgba(123,92,200,.14)}
+.btn.primary{background:var(--grad); color:#fff; border-color:transparent; box-shadow:0 8px 20px rgba(192,100,220,.35); text-shadow:0 1px 2px rgba(120,60,160,.25)}
+.btn.small{padding:8px 14px; font-size:15px}
+.btn:disabled{opacity:.4; cursor:not-allowed; transform:none}
+.btn .cnt{background:var(--grad); color:#fff; border-radius:999px; font-size:12px; padding:0 7px; line-height:19px}
 
 /* ---------- 타이틀 ---------- */
 #screen-title{display:flex; flex-direction:column; align-items:center; gap:16px}
-.logo-wrap{display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center}
-.logo-stones{display:flex; gap:8px; margin-bottom:2px}
-.logo-stones span{width:34px; height:34px; border-radius:50%; border:2.5px solid var(--ink); animation:bob 2.2s ease-in-out infinite}
-.logo-stones span:nth-child(odd){background:radial-gradient(circle at 35% 30%, #777 0, #222 55%, #0a0a0a 100%)}
-.logo-stones span:nth-child(even){background:radial-gradient(circle at 35% 30%, #fff 0, #f1ece4 60%, #cfc6b8 100%)}
-.logo-stones span:nth-child(2){animation-delay:.15s}.logo-stones span:nth-child(3){animation-delay:.3s}
-.logo-stones span:nth-child(4){animation-delay:.45s}.logo-stones span:nth-child(5){animation-delay:.6s}
-@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-h1.logo{margin:4px 0 0; font-size:clamp(34px,8vw,54px); letter-spacing:1px; line-height:1.15; text-shadow:3px 3px 0 rgba(255,201,60,.65)}
-.logo-sub{margin:0; font-size:17px; color:var(--ink-soft)}
+.logo-wrap{display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; padding-top:4px}
+.logo-stones{display:flex; gap:6px}
+.logo-stones svg{width:36px; height:36px; animation:bob 2.4s ease-in-out infinite; filter:drop-shadow(0 4px 6px rgba(123,92,200,.25))}
+.logo-stones svg:nth-child(2){animation-delay:.15s}.logo-stones svg:nth-child(3){animation-delay:.3s}
+.logo-stones svg:nth-child(4){animation-delay:.45s}.logo-stones svg:nth-child(5){animation-delay:.6s}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+h1.logo{margin:6px 0 0; font-family:var(--f-display); font-weight:400; font-size:clamp(34px,8.5vw,56px); line-height:1.15; letter-spacing:.5px;
+  background:linear-gradient(100deg,#FF5FA2 0%,#B57BFF 50%,#5C8DFF 100%); -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 3px 0 rgba(255,255,255,.9)) drop-shadow(0 6px 14px rgba(181,123,255,.3)); text-wrap:balance}
+h1.logo .spark{color:var(--gold); -webkit-text-fill-color:var(--gold); font-size:.55em; vertical-align:super}
+.logo-sub{margin:0; word-break:keep-all; font-size:16px; color:var(--ink-soft)}
 .select-card{width:100%; max-width:640px}
-.select-card h2{margin:0 0 12px; font-size:20px; display:flex; align-items:center; gap:8px}
-.num{width:28px; height:28px; border-radius:50%; background:var(--gold); border:2.5px solid var(--ink);
+.select-card h2{margin:0 0 12px; font-family:var(--f-display); font-weight:400; font-size:20px; display:flex; align-items:center; gap:8px}
+.num{width:28px; height:28px; border-radius:50%; background:var(--grad); color:#fff;
   display:inline-flex; align-items:center; justify-content:center; font-size:15px; flex:none}
-.row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center}
+.grid{display:grid; gap:10px}
+#foe-row{grid-template-columns:repeat(4,minmax(0,1fr))}
+#size-row{grid-template-columns:repeat(3,minmax(0,1fr))}
+#theme-row{grid-template-columns:repeat(4,minmax(0,1fr))}
+.row{display:flex; gap:8px; flex-wrap:wrap; justify-content:center}
 .pick{
-  position:relative; flex:1 1 120px; max-width:150px; background:#FFFDF7; border:3px solid var(--ink);
-  border-radius:20px; padding:12px 8px 10px; display:flex; flex-direction:column; align-items:center; gap:3px;
-  box-shadow:0 4px 0 rgba(74,52,35,.14); transition:transform .1s ease;
+  position:relative; min-width:0; background:rgba(255,255,255,.75); border:2px solid var(--line);
+  border-radius:20px; padding:12px 6px 10px; display:flex; flex-direction:column; align-items:center; gap:4px;
+  transition:transform .12s ease, box-shadow .12s ease, border-color .12s;
 }
 .pick:hover{transform:translateY(-2px)}
-.pick.sel{border-color:var(--coral); background:#FFF1E8; transform:translateY(-3px); box-shadow:0 0 0 4px rgba(255,122,89,.28),0 4px 0 rgba(74,52,35,.14)}
-.pick .emo{font-size:40px; line-height:1.1}
-.pick .pname{font-size:17px}
-.pick .plv{font-size:12.5px; border:2px solid var(--ink); border-radius:999px; padding:0 8px; background:#fff}
-.pick .pdesc{font-size:12.5px; color:var(--ink-soft); line-height:1.35; text-align:center}
-.pick .stars{font-size:13px; min-height:17px; color:var(--ink-soft)}
-.pick.mini{flex:1 1 90px; max-width:130px; padding:10px 6px}
-.pick.mini .pname{font-size:16px}
-.swatch{display:flex; gap:4px; height:34px; align-items:center}
-.swatch svg{width:30px; height:30px}
-.size-dots{width:40px; height:34px; display:grid; gap:2px; align-content:center; justify-content:center}
-.toggle-row{display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; margin-top:12px; font-size:15px; color:var(--ink-soft)}
-.switch{display:inline-flex; align-items:center; gap:8px; background:#FFFDF7; border:2.5px solid var(--ink); border-radius:999px; padding:6px 12px; font-size:15px; color:var(--ink)}
-.switch .knob{width:36px; height:20px; border-radius:999px; background:#E4D6BF; position:relative; border:2px solid var(--ink); transition:background .15s}
-.switch .knob::after{content:''; position:absolute; top:1px; left:1px; width:14px; height:14px; border-radius:50%; background:#fff; border:1.5px solid var(--ink); transition:left .15s}
-.switch.on .knob{background:var(--mint)} .switch.on .knob::after{left:17px}
+.pick.sel{border-color:var(--pink); background:linear-gradient(180deg,#FFF0F7,#F6EEFF); transform:translateY(-3px);
+  box-shadow:0 0 0 4px rgba(255,111,174,.18), 0 10px 20px rgba(255,111,174,.18)}
+.pick.sel::after{content:'✓'; position:absolute; top:-8px; right:-6px; width:24px; height:24px; border-radius:50%;
+  background:var(--grad); color:#fff; font-size:14px; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 8px rgba(192,100,220,.4)}
+.pick .emo{font-size:40px; line-height:1.15}
+.pick .pname{font-family:var(--f-display); font-size:17px}
+.pick .plv{font-size:12px; border-radius:999px; padding:1px 9px; background:#F3EDFF; color:#7A5CD6; font-family:var(--f-display)}
+.pick[data-foe="easy"] .plv{background:#E5FAF3; color:#1F9E7E}
+.pick[data-foe="hard"] .plv{background:#FFE8F2; color:#D63F82}
+.pick .pdesc{font-size:12.5px; color:var(--ink-soft); line-height:1.4; text-align:center; word-break:keep-all}
+.pick .stars{font-size:12.5px; min-height:17px; color:var(--ink-soft)}
+.pick.mini{padding:10px 4px 9px}
+.pick.mini .pname{font-size:15.5px}
+.swatch{display:flex; gap:3px; height:34px; align-items:center}
+.swatch svg{width:30px; height:30px; filter:drop-shadow(0 2px 3px rgba(123,92,200,.25))}
+.toggle-row{display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; margin-top:14px; font-size:15px; color:var(--ink-soft)}
+.switch{display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,.8); border:2px solid var(--line); border-radius:999px; padding:6px 13px; font-size:15px}
+.switch.on{border-color:var(--pink); color:#D63F82; background:#FFF0F7}
+.switch .knob{width:36px; height:20px; border-radius:999px; background:#E4DAF5; position:relative; transition:background .15s}
+.switch .knob::after{content:''; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.2); transition:left .15s}
+.switch.on .knob{background:var(--grad)} .switch.on .knob::after{left:18px}
 #start-row{display:flex; flex-direction:column; align-items:center; gap:10px}
-#btn-start{font-size:24px; padding:14px 44px}
-.tip{margin:0; font-size:13.5px; color:var(--ink-soft); text-align:center; max-width:460px; line-height:1.55}
+#btn-start{font-size:24px; padding:15px 50px}
+.tip{margin:0; word-break:keep-all; font-size:13.5px; color:var(--ink-soft); text-align:center; max-width:460px; line-height:1.6}
 
 /* ---------- 게임 화면 ---------- */
 #screen-game{display:flex; flex-direction:column; gap:10px; align-items:center}
-.topbar{width:100%; display:flex; align-items:center; gap:8px}
+.topbar{width:100%; max-width:640px; display:flex; align-items:center; gap:8px}
 .topbar .spacer{flex:1}
-.players{width:100%; max-width:640px; display:flex; gap:10px; align-items:stretch}
-.pcard{flex:1; min-width:0; display:flex; align-items:center; gap:8px; background:#fff; border:3px solid var(--ink); border-radius:18px; padding:7px 10px; box-shadow:0 4px 0 rgba(74,52,35,.12); transition:all .2s}
+.players{width:100%; max-width:640px; display:flex; gap:8px; align-items:stretch}
+.pcard{flex:1; min-width:0; display:flex; align-items:center; gap:8px; background:var(--card); border:2px solid rgba(255,255,255,.9);
+  border-radius:20px; padding:8px 10px; box-shadow:var(--shadow); transition:all .2s}
 .pcard .pemo{font-size:30px; line-height:1}
 .pcard .pemo svg{width:32px; height:32px; display:block}
-.bubble-emo svg{width:36px; height:36px; display:block}
-.end-emo svg{width:80px; height:80px}
-.pcard .pinfo{min-width:0; display:flex; flex-direction:column}
-.pcard .pn{font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.pcard .pinfo{min-width:0; display:flex; flex-direction:column; gap:1px}
+.pcard .pn{font-family:var(--f-display); font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .pcard .ps{font-size:12.5px; color:var(--ink-soft); display:flex; align-items:center; gap:4px; white-space:nowrap}
 .pcard .ps svg{width:16px; height:16px; flex:none}
-.pcard.turn{border-color:var(--coral); background:#FFF1E8; box-shadow:0 0 0 4px rgba(255,122,89,.25),0 4px 0 rgba(74,52,35,.12); transform:translateY(-2px)}
-.vs{align-self:center; font-size:18px; color:var(--ink-soft)}
+.pcard.turn{border-color:var(--pink); background:linear-gradient(135deg,#FFF0F7,#F4EDFF); box-shadow:0 0 0 4px rgba(255,111,174,.18), var(--shadow); transform:translateY(-2px)}
+.vs{align-self:center; font-family:var(--f-display); font-size:16px; background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent}
 .bubble-row{width:100%; max-width:640px; display:flex; align-items:center; gap:10px}
-.bubble-emo{font-size:34px; flex:none; transition:transform .2s}
+.bubble-emo{font-size:34px; flex:none}
+.bubble-emo svg{width:36px; height:36px; display:block}
 .bubble-emo.jump{animation:jump .5s ease}
-@keyframes jump{0%,100%{transform:translateY(0)}40%{transform:translateY(-10px) rotate(-8deg)}}
-.bubble{position:relative; flex:1; background:#fff; border:3px solid var(--ink); border-radius:18px; padding:9px 13px; font-size:16.5px; line-height:1.4; min-height:46px; display:flex; align-items:center}
-.bubble::before{content:''; position:absolute; left:-11px; top:50%; margin-top:-8px; border:8px solid transparent; border-right-color:var(--ink); border-left:0}
-.bubble::after{content:''; position:absolute; left:-6px; top:50%; margin-top:-6px; border:6px solid transparent; border-right-color:#fff; border-left:0}
-.bubble.warn{background:#FFF0F0; border-color:#D9404F}
-.bubble.warn::after{border-right-color:#FFF0F0}
-.bubble.good{background:#EEFBF1}
-.bubble.good::after{border-right-color:#EEFBF1}
+@keyframes jump{0%,100%{transform:translateY(0)}40%{transform:translateY(-9px) rotate(-8deg)}}
+.bubble{position:relative; flex:1; min-width:0; background:var(--card-solid); border-radius:20px; padding:8px 14px;
+  font-family:var(--f-hand); font-size:21px; line-height:1.3; min-height:48px; display:flex; align-items:center; box-shadow:var(--shadow)}
+.bubble::before{content:''; position:absolute; left:-7px; top:50%; margin-top:-8px; border:8px solid transparent; border-right-color:var(--card-solid); border-left:0}
+.bubble.warn{background:#FFEFF4; color:#C2275E}
+.bubble.warn::before{border-right-color:#FFEFF4}
+.bubble.good{background:#ECFBF5; color:#1A7F66}
+.bubble.good::before{border-right-color:#ECFBF5}
 
-.board-wrap{position:relative; width:min(100%, 640px, calc(100dvh - 255px)); min-width:min(100%, 300px); aspect-ratio:1/1}
+.board-wrap{position:relative; width:min(100%, 640px, calc(100dvh - 255px)); min-width:min(100%, 300px); aspect-ratio:1/1; max-width:100%}
 #board-svg{width:100%; height:100%; display:block; touch-action:manipulation; cursor:pointer;
-  filter:drop-shadow(0 7px 0 rgba(74,52,35,.22))}
+  filter:drop-shadow(0 12px 22px rgba(123,92,200,.22))}
 .st{transform-box:fill-box; transform-origin:center}
-.st.drop{animation:drop .22s cubic-bezier(.3,1.6,.6,1)}
+.st.drop{animation:drop .24s cubic-bezier(.3,1.6,.6,1)}
 @keyframes drop{0%{transform:scale(1.5); opacity:.2}100%{transform:scale(1); opacity:1}}
 .win-ring{animation:pulse 0.9s ease-in-out infinite; transform-box:fill-box; transform-origin:center}
 @keyframes pulse{0%,100%{opacity:1; transform:scale(1)}50%{opacity:.45; transform:scale(1.12)}}
@@ -143,33 +163,43 @@ h1.logo{margin:4px 0 0; font-size:clamp(34px,8vw,54px); letter-spacing:1px; line
 .hint-star{animation:twinkle 1s ease-in-out infinite; transform-box:fill-box; transform-origin:center}
 @keyframes twinkle{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.25) rotate(18deg)}}
 .ghost-pulse{animation:gp 1s ease-in-out infinite}
-@keyframes gp{0%,100%{opacity:.75}50%{opacity:.4}}
+@keyframes gp{0%,100%{opacity:.8}50%{opacity:.45}}
 .controls{display:flex; gap:8px; flex-wrap:wrap; justify-content:center}
 #tap-tip{font-size:14px; color:var(--ink-soft); min-height:20px; text-align:center}
 
 /* ---------- 모달 ---------- */
-.modal{position:fixed; inset:0; z-index:50; background:rgba(74,52,35,.42); display:flex; align-items:center; justify-content:center; padding:16px}
-.modal .card{width:100%; max-width:420px; text-align:center; animation:popin .35s cubic-bezier(.3,1.5,.6,1); max-height:90dvh; overflow:auto}
+.modal{position:fixed; inset:0; z-index:50; background:rgba(61,44,92,.35); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
+  display:flex; align-items:center; justify-content:center; padding:16px}
+.modal .card{width:100%; max-width:420px; text-align:center; background:var(--card-solid); animation:popin .35s cubic-bezier(.3,1.5,.6,1); max-height:90dvh; overflow:auto}
 @keyframes popin{0%{transform:scale(.6); opacity:0}100%{transform:scale(1); opacity:1}}
-.end-emo{font-size:72px; line-height:1.1}
-.end-title{font-size:32px; margin:6px 0 2px}
-.end-msg{font-size:17px; color:var(--ink-soft); margin:4px 0 12px; line-height:1.5}
+.end-emo{font-size:70px; line-height:1.1}
+.end-emo svg{width:80px; height:80px}
+.end-title{font-family:var(--f-display); font-size:32px; margin:6px 0 2px; background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent}
+.end-msg{font-size:16.5px; color:var(--ink-soft); margin:4px 0 12px; line-height:1.55; word-break:keep-all}
 .end-stars{font-size:28px; letter-spacing:3px; min-height:34px}
 .end-btns{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:8px}
-.rules{text-align:left; font-size:16px; line-height:1.6}
-.rules h3{margin:12px 0 4px; font-size:18px}
+.rules{text-align:left; font-size:15.5px; line-height:1.65; word-break:keep-all}
+.rules h3{margin:14px 0 4px; font-family:var(--f-display); font-weight:400; font-size:18px; color:#7A5CD6}
 .rules p{margin:0 0 6px}
-.mini-board{display:inline-grid; gap:2px; vertical-align:middle; margin:4px 0}
+.rules b{color:#D63F82}
 #confetti-layer{position:fixed; inset:0; pointer-events:none; z-index:60; overflow:hidden}
-.confetti{position:absolute; top:-20px; width:10px; height:14px; border-radius:3px; animation:fall linear forwards}
-@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+.confetti{position:absolute; top:-30px; line-height:1; animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(112vh) rotate(540deg)}}
 
+@media (max-width:560px){
+  #foe-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
 @media (max-width:420px){
+  .card{padding:16px 14px}
   .pick .emo{font-size:34px}
   .pcard .pemo{font-size:26px}
   .pcard .pn{font-size:15px}
-  .bubble{font-size:15.5px}
-  .btn.small{padding:6px 11px; font-size:14px}
+  .bubble{font-size:19.5px}
+  .btn.small{padding:7px 12px; font-size:14px}
+  .swatch svg{width:26px; height:26px}
+}
+@media (max-width:360px){
+  #theme-row{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media (prefers-reduced-motion:reduce){
   *{animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important}
@@ -177,26 +207,27 @@ h1.logo{margin:4px 0 0; font-size:clamp(34px,8vw,54px); letter-spacing:1px; line
 </style>
 </head>
 <body>
+<div id="sky" aria-hidden="true"></div>
 <div id="app">
 
   <!-- ============ 타이틀 화면 ============ -->
   <section id="screen-title">
     <div class="logo-wrap">
-      <div class="logo-stones"><span></span><span></span><span></span><span></span><span></span></div>
-      <h1 class="logo">윤서의 오목 놀이터</h1>
+      <div class="logo-stones" id="logo-stones"></div>
+      <h1 class="logo">윤서의 오목 놀이터<span class="spark">✦</span></h1>
       <p class="logo-sub">가로, 세로, 대각선! 내 돌 5개를 먼저 이으면 이겨요</p>
     </div>
 
     <div class="card select-card">
       <h2><span class="num">1</span>누구랑 할까요?</h2>
-      <div class="row" id="foe-row"></div>
+      <div class="grid" id="foe-row"></div>
     </div>
 
     <div class="card select-card">
       <h2><span class="num">2</span>판과 돌을 골라요</h2>
-      <div class="row" id="size-row"></div>
+      <div class="grid" id="size-row"></div>
       <div style="height:12px"></div>
-      <div class="row" id="theme-row"></div>
+      <div class="grid" id="theme-row"></div>
       <div class="toggle-row" id="first-wrap">
         <span>누가 먼저?</span>
         <div class="row" id="first-row" style="gap:8px"></div>
@@ -208,7 +239,7 @@ h1.logo{margin:4px 0 0; font-size:clamp(34px,8vw,54px); letter-spacing:1px; line
 
     <div id="start-row">
       <button class="btn" id="btn-continue">▶ 하던 판 이어서 하기</button>
-      <button class="btn primary" id="btn-start">오목 시작!</button>
+      <button class="btn primary" id="btn-start">오목 시작 ✨</button>
       <button class="btn small" id="btn-rules-title">📖 오목 하는 법</button>
       <p class="tip">아이폰·아이패드라면 사파리 <b>공유</b> 버튼 → <b>홈 화면에 추가</b>를 누르면 앱처럼 켜져요!</p>
     </div>
@@ -230,7 +261,7 @@ h1.logo{margin:4px 0 0; font-size:clamp(34px,8vw,54px); letter-spacing:1px; line
     </div>
 
     <div class="bubble-row">
-      <div class="bubble-emo" id="bubble-emo">🐥</div>
+      <div class="bubble-emo" id="bubble-emo">🐱</div>
       <div class="bubble" id="bubble">안녕!</div>
     </div>
 
@@ -286,7 +317,7 @@ h1.logo{margin:4px 0 0; font-size:clamp(34px,8vw,54px); letter-spacing:1px; line
       <p>친구 돌 <b>3개</b>가 나란히 있고 <b>양쪽 끝이 비어 있으면</b> 위험해요! 미리 한쪽을 막아요.</p>
       <h3>✨ 이기는 꿀팁</h3>
       <p>내 돌로 <b>양쪽이 열린 3개</b>를 두 개 한꺼번에 만들면, 친구가 한 번에 다 막을 수 없어요.</p>
-      <h3>🧸 버튼 설명</h3>
+      <h3>🎀 버튼 설명</h3>
       <p>↩️ <b>무르기</b>: 방금 둔 수를 취소해요.<br>💡 <b>힌트</b>: 좋은 자리를 반짝 알려 줘요 (한 판에 3번).</p>
     </div>
     <div class="end-btns"><button class="btn primary" id="btn-rules-close">알겠어요!</button></div>
@@ -304,42 +335,46 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
 
 /* ---------------- 저장 ---------------- */
 const SAVE_KEY='omok-noriteo-v1';
-let SAVE={wins:{easy:0,normal:0,hard:0}, sound:true, foe:'easy', size:15, theme:'classic', first:'me', confirm:true, game:null};
+let SAVE={wins:{easy:0,normal:0,hard:0}, sound:true, foe:'easy', size:15, theme:'pearl', first:'me', confirm:true, game:null};
 function loadSave(){ try{ const s=JSON.parse(localStorage.getItem(SAVE_KEY)); if(s&&typeof s==='object'){ SAVE=Object.assign(SAVE,s); SAVE.wins=Object.assign({easy:0,normal:0,hard:0},s.wins||{}); } }catch(e){} }
 function persist(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); }catch(e){} }
 
 /* ---------------- 상대 친구들 ---------------- */
 const FOES={
-  easy:  {emo:'🐥', name:'삐약이',    lv:'쉬움',   desc:'이제 막 오목을 배웠어요'},
-  normal:{emo:'🐰', name:'토순이',    lv:'보통',   desc:'제법 잘 막아요'},
-  hard:  {emo:'🦉', name:'부엉 박사', lv:'어려움', desc:'오목 박사님! 엄마 아빠도 도전'},
-  duo:   {emo:'👨‍👩‍👧', name:'둘이서',   lv:'함께',   desc:'한 화면에서 번갈아 두어요'},
+  easy:  {emo:'🐱', name:'모찌',   lv:'쉬움',   desc:'오목 배우는 중인 아기 고양이'},
+  normal:{emo:'🦊', name:'루루',   lv:'보통',   desc:'눈치 빠른 여우, 잘 막아요'},
+  hard:  {emo:'🦄', name:'오로라', lv:'어려움', desc:'전설의 유니콘! 엄마 아빠도 도전'},
+  duo:   {emo:'👭', name:'둘이서', lv:'함께',   desc:'친구·가족이랑 한 화면에서'},
 };
 const LINES={
-  hello:{easy:['안녕! 나랑 오목 하자! 삐약~','삐약! 나 열심히 할게!'],
-         normal:['안녕! 오늘은 내가 이길 거야~ 깡총!','토순이 준비 완료! 시작해 볼까?'],
-         hard:['부엉~ 오목 박사가 왔다네. 잘 부탁해요!','호오, 도전자로군! 실력을 보여 주렴.']},
-  think:['음… 어디 둘까?','흠흠, 생각 중…','어디가 좋을까~?','잠깐만 기다려 줘!'],
-  idle:{easy:['여기다! 삐약!','헤헤, 여기 놓을래!','이쯤이 좋아 보여~'],
-        normal:['여기 어때?','깡총! 여기 둘게!','네 차례야!'],
-        hard:['부엉. 여기로군.','자, 다음 수를 보여 주렴.','흠, 이 자리가 좋겠어.']},
-  four:['앗, 내 돌이 4개야! 막을 수 있을까?','짠! 4개 이어졌어!'],
-  three:['내 돌 3개가 나란히 있어! 양쪽이 비어 있는데?','후후, 3개 만들었지~'],
-  blockFour:['휴~ 겨우 막았다!','4개는 안 되지! 막았어!'],
-  blockThree:['거긴 내가 막을게!','3개는 미리 막아야지!'],
-  aiWin:{easy:['삐약! 내가 이겼다! 한 번 더 할래?'],normal:['깡총깡총! 내가 이겼지롱!'],hard:['부엉~ 좋은 대국이었어. 다시 도전하렴!']},
-  aiLose:{easy:['우와~ 너 진짜 잘한다! 삐약!'],normal:['으앙, 졌다! 너 오목 천재구나?'],hard:['놀랍군! 박사를 이기다니, 대단해!']},
+  hello:{easy:['안녕! 나 모찌야. 살살 해 줘냥 🐾','냥! 오늘은 나도 열심히 할 거다냥'],
+         normal:['안녕~ 루루야! 쉽진 않을걸? 😏','준비됐어? 나 은근 잘한다~'],
+         hard:['오로라 등장 ✨ 진심으로 겨뤄 보자!','후후, 나를 이기면 전설이 되는 거야 🦄']},
+  think:['음… 어디 둘까?','잠깐만, 생각 중 🤔','흠흠…','여기? 아니 저기?'],
+  idle:{easy:['여기 둘래냥!','냥~ 여기!','이쯤 어때냥?'],
+        normal:['여기 어때?','오케이, 여기!','이번엔 윤서 차례~'],
+        hard:['여기로 할게 ✨','다음 수, 기대할게.','흠, 이 자리가 좋겠어.']},
+  four:['헐, 내 돌 4개 됐다! 막을 수 있어?','짠! 4개 완성 😎'],
+  three:['3개 나란히! 양쪽이 비어 있는데~?','후후, 3개 만들었지롱'],
+  blockFour:['휴~ 아슬아슬하게 막았다!','4개는 안 돼~ 막았지!'],
+  blockThree:['거긴 내가 미리 막을게!','3개는 미리 막아야지~'],
+  aiWin:{easy:['앗, 내가 이겼다냥! 한 판 더?'],normal:['이겼다~ 다음엔 더 잘해 봐! 😜'],hard:['좋은 대국이었어 ✨ 다시 도전해 줘!']},
+  aiLose:{easy:['우와 윤서 최고다냥! 🐾'],normal:['헐 졌다… 윤서 오목 천재야?'],hard:['대단해! 전설의 유니콘을 이기다니 🦄✨']},
 };
 
 /* ---------------- 돌 모양 ---------------- */
 const THEMES={
-  classic:{label:'바둑돌', names:['검은 돌','흰 돌'],
-    g:[['#7a7a7a','#262626','#050505'],['#ffffff','#f3eee6','#c9bfae']], stroke:['#000','#a89c88'], mark:['#fff','#e0533d']},
-  candy:{label:'사탕', names:['딸기 사탕','소다 사탕'],
-    g:[['#ffc2cc','#ff5d78','#d93253'],['#c8f1ff','#3fb8ef','#1784c4']], stroke:['#b52441','#136a9e'], mark:['#fff','#fff']},
-  animal:{label:'동물', names:['멍멍이','야옹이'], emoji:['🐶','🐱'],
-    g:[['#fff3d6','#ffd27a','#e8a53a'],['#f4ecff','#c9b2ff','#9b7bff']], stroke:['#a8731f','#6f52c9'], mark:['#e0533d','#e0533d']},
+  pearl:{label:'진주', names:['흑진주','백진주'],
+    g:[['#9A8AC8','#3B2F60','#1A1430'],['#FFFFFF','#F8F2FF','#D9CCF0']], stroke:['#150F26','#BCA8E2'], mark:['#FFB3D6','#FF6FAE']},
+  macaron:{label:'마카롱', names:['딸기 마카롱','민트 마카롱'],
+    g:[['#FFD6E8','#FF8DBE','#EE5598'],['#D8FFF2','#6FE0C1','#2DB394']], stroke:['#D2427E','#1F9479'], mark:['#fff','#fff']},
+  heartstar:{label:'하트별', names:['하트','별'], icon:['heart','star'],
+    g:[['#FFCBE1','#FF7AB2','#E64B90'],['#DFD6FF','#A08AFF','#6D55E6']], stroke:['#C93676','#5640C9'], mark:['#FFE36E','#FFE36E']},
+  animal:{label:'냥멍', names:['냥이','멍이'], emoji:['🐱','🐶'],
+    g:[['#FFF6E2','#FFD98F','#F0B04A'],['#F4EEFF','#CDB8FF','#A08AFF']], stroke:['#B8801F','#6F52C9'], mark:['#FF4D7E','#FF4D7E']},
 };
+const HEART='M12 21s-7.5-4.6-9.6-9.2C.9 8.4 2.8 4.5 6.6 4.5c2.1 0 3.6 1.2 5.4 3.1 1.8-1.9 3.3-3.1 5.4-3.1 3.8 0 5.7 3.9 4.2 7.3C19.5 16.4 12 21 12 21z';
+function starPts(x,y,R,r){ let p=''; for(let k=0;k<10;k++){ const a=-Math.PI/2+k*Math.PI/5, rr=k%2?r:R; p+=`${(x+Math.cos(a)*rr).toFixed(2)},${(y+Math.sin(a)*rr).toFixed(2)} `; } return p; }
 function gradDefs(id){
   const t=THEMES[id]; let s='';
   t.g.forEach((c,i)=>{ s+=`<radialGradient id="sg${i+1}-${id}" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="${c[0]}"/><stop offset=".55" stop-color="${c[1]}"/><stop offset="1" stop-color="${c[2]}"/></radialGradient>`; });
@@ -347,7 +382,13 @@ function gradDefs(id){
 }
 function stoneShape(x,y,r,c,themeId,extra){
   const t=THEMES[themeId];
-  let s=`<circle cx="${x}" cy="${y}" r="${r}" fill="url(#sg${c}-${themeId})" stroke="${t.stroke[c-1]}" stroke-width="${r*0.07}"/>`;
+  let s=`<circle cx="${x}" cy="${y+r*0.13}" r="${r*0.98}" fill="rgba(80,50,140,.22)"/>`
+       +`<circle cx="${x}" cy="${y}" r="${r}" fill="url(#sg${c}-${themeId})" stroke="${t.stroke[c-1]}" stroke-width="${r*0.07}"/>`;
+  if(!t.emoji) s+=`<ellipse cx="${x-r*0.33}" cy="${y-r*0.38}" rx="${r*0.3}" ry="${r*0.17}" transform="rotate(-32 ${x-r*0.33} ${y-r*0.38})" fill="#fff" opacity="${c===1&&themeId==='pearl'?0.35:0.6}"/>`;
+  if(t.icon){
+    if(t.icon[c-1]==='heart'){ const k=r*1.05/24; s+=`<path d="${HEART}" transform="translate(${x-12*k} ${y-12.6*k}) scale(${k})" fill="#fff" opacity=".95"/>`; }
+    else s+=`<polygon points="${starPts(x,y+r*0.04,r*0.58,r*0.25)}" fill="#fff" opacity=".95" stroke-linejoin="round"/>`;
+  }
   if(t.emoji) s+=`<text x="${x}" y="${y+r*0.06}" text-anchor="middle" dominant-baseline="central" font-size="${r*1.25}">${t.emoji[c-1]}</text>`;
   return `<g class="st ${extra||''}">${s}</g>`;
 }
@@ -590,7 +631,7 @@ function hintFor(b,c){
 }
 
 /* ================= 게임 진행 ================= */
-const S={screen:'title', foe:'easy', N:15, theme:'classic', human:1, board:null, moves:[], turn:1,
+const S={screen:'title', foe:'easy', N:15, theme:'pearl', human:1, board:null, moves:[], turn:1,
   over:false, winner:-1, winLine:null, busy:false, hints:3, ghost:-1, hintIdx:-1, danger:[], token:0, viewing:false};
 const VIEW=600;
 let CELL=40, MARG=40;
@@ -600,11 +641,11 @@ const humanTurn=()=>!S.over&&(isDuo()||S.turn===S.human);
 
 function nameOf(c){
   if(isDuo()) return THEMES[S.theme].names[c-1];
-  return c===S.human ? '나' : FOES[S.foe].name;
+  return c===S.human ? '윤서' : FOES[S.foe].name;
 }
 function emoOf(c){
   if(isDuo()) return stoneIcon(c,S.theme,40);
-  return c===S.human ? '😊' : FOES[S.foe].emo;
+  return c===S.human ? '👧' : FOES[S.foe].emo;
 }
 
 function hoshi(n){
@@ -615,14 +656,15 @@ function buildBoard(){
   N=S.N; CELL=VIEW/(S.N+1); MARG=CELL;
   const end=MARG+(S.N-1)*CELL;
   let g=`<defs>
-    <linearGradient id="wood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F7CF7E"/><stop offset="1" stop-color="#E9B45A"/></linearGradient></defs>
-    <rect x="4" y="4" width="${VIEW-8}" height="${VIEW-8}" rx="26" fill="url(#wood)" stroke="#4A3423" stroke-width="6"/>`;
+    <linearGradient id="boardbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF8FC"/><stop offset=".55" stop-color="#F8F1FF"/><stop offset="1" stop-color="#EEF9FF"/></linearGradient></defs>
+    <rect x="4" y="4" width="${VIEW-8}" height="${VIEW-8}" rx="30" fill="url(#boardbg)" stroke="#fff" stroke-width="7"/>
+    <rect x="9" y="9" width="${VIEW-18}" height="${VIEW-18}" rx="26" fill="none" stroke="#E6D9FF" stroke-width="2"/>`;
   for(let i=0;i<S.N;i++){
     const p=MARG+i*CELL;
-    g+=`<line x1="${MARG}" y1="${p}" x2="${end}" y2="${p}" stroke="#7A5530" stroke-width="${i===0||i===S.N-1?2.6:1.5}"/>`;
-    g+=`<line x1="${p}" y1="${MARG}" x2="${p}" y2="${end}" stroke="#7A5530" stroke-width="${i===0||i===S.N-1?2.6:1.5}"/>`;
+    g+=`<line x1="${MARG}" y1="${p}" x2="${end}" y2="${p}" stroke="#C7B2EC" stroke-width="${i===0||i===S.N-1?2.4:1.4}"/>`;
+    g+=`<line x1="${p}" y1="${MARG}" x2="${p}" y2="${end}" stroke="#C7B2EC" stroke-width="${i===0||i===S.N-1?2.4:1.4}"/>`;
   }
-  for(const [x,y] of hoshi(S.N)) g+=`<circle cx="${MARG+x*CELL}" cy="${MARG+y*CELL}" r="${CELL*0.11}" fill="#7A5530"/>`;
+  for(const [x,y] of hoshi(S.N)) g+=`<circle cx="${MARG+x*CELL}" cy="${MARG+y*CELL}" r="${CELL*0.12}" fill="#FF9CC8"/>`;
   g+=`<g id="g-stones"></g><g id="g-marks"></g><g id="g-ghost"></g>`;
   const svg=$('#board-svg');
   svg.setAttribute('viewBox',`0 0 ${VIEW} ${VIEW}`);
@@ -642,22 +684,22 @@ function renderMarks(){
   const t=THEMES[S.theme];
   if(S.moves.length && !S.winLine){
     const last=S.moves[S.moves.length-1], [x,y]=pos(last), c=S.board[last];
-    if(t.emoji) s+=`<circle cx="${x}" cy="${y}" r="${CELL*0.47}" fill="none" stroke="${t.mark[c-1]}" stroke-width="${CELL*0.08}"/>`;
+    if(t.emoji||t.icon) s+=`<circle cx="${x}" cy="${y}" r="${CELL*0.47}" fill="none" stroke="${t.mark[c-1]}" stroke-width="${CELL*0.08}"/>`;
     else s+=`<circle cx="${x}" cy="${y}" r="${CELL*0.13}" fill="${t.mark[c-1]}"/>`;
   }
   if(S.winLine){
     const [x1,y1]=pos(S.winLine[0]), [x2,y2]=pos(S.winLine[S.winLine.length-1]);
-    s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#FF3D6E" stroke-width="${CELL*0.16}" stroke-linecap="round" opacity=".85"/>`;
-    for(const i of S.winLine){ const [x,y]=pos(i); s+=`<circle class="win-ring" cx="${x}" cy="${y}" r="${CELL*0.5}" fill="none" stroke="#FFC93C" stroke-width="${CELL*0.1}"/>`; }
+    s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#FF6FAE" stroke-width="${CELL*0.16}" stroke-linecap="round" opacity=".85"/>`;
+    for(const i of S.winLine){ const [x,y]=pos(i); s+=`<circle class="win-ring" cx="${x}" cy="${y}" r="${CELL*0.5}" fill="none" stroke="#FFC94D" stroke-width="${CELL*0.1}"/>`; }
   }
   for(const i of S.danger){
     const [x,y]=pos(i);
-    s+=`<circle class="danger" cx="${x}" cy="${y}" r="${CELL*0.4}" fill="rgba(255,61,110,.22)" stroke="#FF3D6E" stroke-width="${CELL*0.08}" stroke-dasharray="${CELL*0.18} ${CELL*0.12}"/>`;
+    s+=`<circle class="danger" cx="${x}" cy="${y}" r="${CELL*0.4}" fill="rgba(255,77,126,.2)" stroke="#FF4D7E" stroke-width="${CELL*0.08}" stroke-dasharray="${CELL*0.18} ${CELL*0.12}"/>`;
   }
   if(S.hintIdx>=0){
     const [x,y]=pos(S.hintIdx), R=CELL*0.5, r=R*0.45;
     let pts=''; for(let k=0;k<10;k++){ const a=-Math.PI/2+k*Math.PI/5, rr=k%2?r:R; pts+=`${x+Math.cos(a)*rr},${y+Math.sin(a)*rr} `; }
-    s+=`<polygon class="hint-star" points="${pts}" fill="#FFE066" stroke="#E0A800" stroke-width="2.5" stroke-linejoin="round"/>`;
+    s+=`<polygon class="hint-star" points="${pts}"  fill="#FFE36E" stroke="#F2A900" stroke-width="2.5" stroke-linejoin="round"/>`;
   }
   $('#g-marks').innerHTML=s;
 }
@@ -666,7 +708,7 @@ function renderGhost(idx,confirm){
   if(idx<0||!humanTurn()||S.board[idx]){ g.innerHTML=''; return; }
   const [x,y]=pos(idx);
   g.innerHTML=`<g opacity="${confirm?0.75:0.45}" class="${confirm?'ghost-pulse':''}">${stoneShape(x,y,CELL*0.45,S.turn,S.theme)}</g>`
-    +(confirm?`<circle cx="${x}" cy="${y}" r="${CELL*0.62}" fill="none" stroke="#FF7A59" stroke-width="3" stroke-dasharray="6 5"/>`:'');
+    +(confirm?`<circle cx="${x}" cy="${y}" r="${CELL*0.62}" fill="none" stroke="#FF6FAE" stroke-width="3" stroke-dasharray="6 5"/>`:'');
 }
 
 function bubble(text,kind,who){
@@ -700,7 +742,7 @@ function saveGame(){
 
 function startGame(opts){
   S.token++;
-  S.foe=opts.foe; S.N=opts.N; S.theme=opts.theme;
+  S.foe=opts.foe; S.N=opts.N; S.theme=THEMES[opts.theme]?opts.theme:'pearl';
   S.human = isDuo()?0:(opts.human||1);
   S.board=new Int8Array(S.N*S.N); S.moves=[]; S.turn=1;
   S.over=false; S.winLine=null; S.busy=false; S.hints=opts.hints==null?3:opts.hints;
@@ -767,7 +809,7 @@ async function nextTurn(){
   const myF=[...scanWins(S.board,ai)];
   if(myF.length){
     bubble(pick(LINES.four),'warn');
-    if(S.foe==='easy'){ S.danger=myF; renderMarks(); bubble('앗, 내 돌이 4개야! 빨간 자리를 막아야 해!','warn'); }
+    if(S.foe==='easy'){ S.danger=myF; renderMarks(); bubble('앗, 내 돌이 4개다냥! 빨간 자리를 막아야 해!','warn'); }
     if(S.foe!=='hard') snd.warn();
   }else if(beforeHumanF.includes(idx)) bubble(pick(LINES.blockFour));
   else if(beforeHumanO3.includes(idx)) bubble(pick(LINES.blockThree));
@@ -779,7 +821,7 @@ function coachHuman(){
   /* 아이가 이길 기회가 있을 때 쉬움 단계에서는 살짝 귀띔 */
   if(S.foe==='easy' && !S.danger.length){
     const mine=[...scanWins(S.board,S.human)];
-    if(mine.length) bubble('어? 너 이길 수 있는 자리가 있는 것 같아! 잘 찾아봐~','good');
+    if(mine.length) bubble('어? 윤서 이길 수 있는 자리가 있는 것 같다냥! 잘 찾아봐~','good');
   }
 }
 
@@ -796,10 +838,10 @@ function endGame(winner){
     bubble(`${nameOf(winner)}이(가) 5개를 이었어요! 🎉`,'good',emoOf(winner));
   }else if(winner===S.human){
     SAVE.wins[S.foe]=(SAVE.wins[S.foe]||0)+1; persist();
-    e.textContent='🏆'; t.textContent='내가 이겼다!';
+    e.textContent='🏆'; t.textContent='윤서 승리!';
     const w=SAVE.wins[S.foe];
     st.textContent='⭐'.repeat(Math.min(w,5))+(w>5?` ×${w}`:'');
-    m.textContent=`${FOES[S.foe].name}에게 ${w}번째 승리! `+(S.foe==='easy'&&w>=3?'이제 토순이에게 도전해 볼까요? 🐰':S.foe==='normal'&&w>=3?'부엉 박사에게 도전해 볼까요? 🦉':'정말 멋져요!');
+    m.textContent=`${FOES[S.foe].name}에게 ${w}번째 승리! `+(S.foe==='easy'&&w>=3?'이제 루루에게 도전해 볼까? 🦊':S.foe==='normal'&&w>=3?'오로라에게 도전해 볼까? 🦄':'정말 멋져! 💖');
     bubble(pick(LINES.aiLose[S.foe]),'good');
     snd.win(); confetti();
   }else{
@@ -838,12 +880,14 @@ function showHint(){
 }
 function confetti(){
   const layer=$('#confetti-layer');
-  const colors=['#FFC93C','#FF7A59','#4FC3F7','#58C97B','#FF6B81','#9B7BFF'];
-  for(let i=0;i<70;i++){
+  const colors=['#FF6FAE','#C08BFF','#8FA8FF','#4FCFAE','#FFC94D','#FFB38A'];
+  for(let i=0;i<60;i++){
     const c=document.createElement('div');
     c.className='confetti';
+    c.textContent=pick(['♥','★','✦','●','♥','★']);
     c.style.left=Math.random()*100+'%';
-    c.style.background=pick(colors);
+    c.style.color=pick(colors);
+    c.style.fontSize=(14+Math.random()*16)+'px';
     c.style.animationDuration=(2.2+Math.random()*1.6)+'s';
     c.style.animationDelay=(Math.random()*0.8)+'s';
     layer.appendChild(c);
@@ -958,10 +1002,10 @@ $('#btn-end-look').addEventListener('click',()=>{ $('#modal-end').classList.add(
 function openRules(){
   const pic=[0,0,0,0,0,0,0, 0,1,0,0,0,0,0, 0,0,1,2,0,0,0, 0,2,0,1,0,0,0, 0,0,2,0,1,0,0, 0,0,0,2,0,1,0, 0,0,0,0,0,0,0];
   $('#rule-pic').innerHTML=`<svg viewBox="0 0 160 160" width="150" height="150" xmlns="http://www.w3.org/2000/svg">
-    <rect x="2" y="2" width="156" height="156" rx="14" fill="#F2C46D" stroke="#4A3423" stroke-width="3"/>
-    ${[0,1,2,3,4,5,6].map(i=>`<line x1="20" y1="${20+i*20}" x2="140" y2="${20+i*20}" stroke="#7A5530"/><line x1="${20+i*20}" y1="20" x2="${20+i*20}" y2="140" stroke="#7A5530"/>`).join('')}
-    ${pic.map((v,i)=>v?stoneShape(20+(i%7)*20,20+((i/7)|0)*20,8.5,v,'classic'):'').join('')}
-    <line x1="40" y1="40" x2="120" y2="120" stroke="#FF3D6E" stroke-width="4" stroke-linecap="round" opacity=".8"/></svg>`;
+    <rect x="2" y="2" width="156" height="156" rx="16" fill="#FBF6FF" stroke="#E6D9FF" stroke-width="3"/>
+    ${[0,1,2,3,4,5,6].map(i=>`<line x1="20" y1="${20+i*20}" x2="140" y2="${20+i*20}" stroke="#C7B2EC"/><line x1="${20+i*20}" y1="20" x2="${20+i*20}" y2="140" stroke="#C7B2EC"/>`).join('')}
+    ${pic.map((v,i)=>v?stoneShape(20+(i%7)*20,20+((i/7)|0)*20,8.5,v,'pearl'):'').join('')}
+    <line x1="40" y1="40" x2="120" y2="120" stroke="#FF6FAE" stroke-width="4" stroke-linecap="round" opacity=".8"/></svg>`;
   $('#modal-rules').classList.remove('hidden');
 }
 $('#btn-rules').addEventListener('click',openRules);
@@ -973,6 +1017,9 @@ $('#modal-rules').addEventListener('click',e=>{ if(e.target.id==='modal-rules') 
 /* 돌 그라데이션은 한 곳에만 정의해 모든 SVG가 함께 쓴다 */
 $('#stone-defs defs').innerHTML=Object.keys(THEMES).map(gradDefs).join('');
 loadSave();
+if(!THEMES[SAVE.theme]) SAVE.theme='pearl';   /* 예전 버전의 돌 이름 정리 */
+$('#logo-stones').innerHTML=[[1,'pearl'],[2,'pearl'],[1,'heartstar'],[2,'heartstar'],[1,'macaron']].map(([c,t])=>stoneIcon(c,t,36)).join('');
+$('#sky').innerHTML=Array.from({length:14},(_,i)=>`<span style="left:${(i*37+11)%100}%;top:${(i*53+7)%100}%;font-size:${8+(i*7)%10}px;animation-delay:${(i*0.37)%3}s">${i%3?'✦':'♥'}</span>`).join('');
 showTitle();
 </script>
 </body>
