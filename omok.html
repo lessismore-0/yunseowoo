@@ -260,6 +260,19 @@ h1.logo{margin:4px 0 0; font-size:clamp(34px,8vw,54px); letter-spacing:1px; line
   </div>
 </div>
 
+<!-- 새 판 확인 -->
+<div class="modal hidden" id="modal-restart">
+  <div class="card">
+    <div class="end-emo">🤔</div>
+    <div class="end-title" style="font-size:24px">새로 시작할까요?</div>
+    <p class="end-msg">지금 하던 판은 없어져요.</p>
+    <div class="end-btns">
+      <button class="btn" id="btn-restart-no">계속 할래요</button>
+      <button class="btn primary" id="btn-restart-yes">새 판 시작!</button>
+    </div>
+  </div>
+</div>
+
 <!-- 규칙 -->
 <div class="modal hidden" id="modal-rules">
   <div class="card">
@@ -928,10 +941,13 @@ $('#btn-continue').addEventListener('click',()=>{ const g=SAVE.game; if(!g) retu
 $('#btn-home').addEventListener('click',showTitle);
 $('#btn-undo').addEventListener('click',undo);
 $('#btn-hint').addEventListener('click',showHint);
+const restartSame=()=>startGame({foe:S.foe, N:S.N, theme:S.theme, human:S.human||1});
 $('#btn-restart').addEventListener('click',()=>{
-  if(S.moves.length>2 && !S.over && !confirm('지금 판을 그만두고 새로 시작할까요?')) return;
-  startGame({foe:S.foe, N:S.N, theme:S.theme, human:S.human||1});
+  if(S.moves.length>2 && !S.over){ $('#modal-restart').classList.remove('hidden'); return; }
+  restartSame();
 });
+$('#btn-restart-no').addEventListener('click',()=>$('#modal-restart').classList.add('hidden'));
+$('#btn-restart-yes').addEventListener('click',()=>{ $('#modal-restart').classList.add('hidden'); restartSame(); });
 $('#btn-sound').addEventListener('click',()=>{ SAVE.sound=!SAVE.sound; persist(); updatePanels(); snd.pop(); });
 $('#btn-end-again').addEventListener('click',()=>{
   /* 한 판 더: 비기거나 진 경우 그대로, 둘이서는 먼저 두는 사람을 바꾸지 않음 */
