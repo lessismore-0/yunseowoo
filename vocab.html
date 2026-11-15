@@ -322,7 +322,7 @@ function vScrap(){
 
 /* ========== 단어 넣기 (사진 / 직접) ========== */
 let A={};
-function resetAdd(gid,typed){A={gid:gid||(S.groups.length?S.groups[S.groups.length-1].id:'__new'),newName:weekName(),img:null,rot:0,rows:null,busy:false,typed:'',typedMode:!!typed,psm:'6'};}
+function resetAdd(gid,typed){A={gid:gid||(S.groups.length?S.groups[S.groups.length-1].id:'__new'),newName:weekName(),img:null,rot:0,rows:null,busy:false,typed:'',typedMode:!!typed,mode:'table'};}
 function vAdd(){
   const opts=S.groups.slice().reverse().map(g=>`<option value="${g.id}" ${A.gid===g.id?'selected':''}>${esc(g.name)}</option>`).join('');
   let body='';
@@ -343,7 +343,7 @@ function vAdd(){
     ${miss?`<p class="small center" style="color:#d04848;font-weight:700">뜻이 빈 줄이 ${miss}개 있어요.</p>`:''}
     <div class="stack">
       <button class="btn green full" data-a="saveRows">💾 단어장에 저장하기</button>
-      ${A.img?`<button class="btn ghost full sm" data-a="reOcr">🔄 결과가 이상해요 · 다른 방법으로 다시 읽기</button>`:''}
+      ${A.img?`<button class="btn ghost full sm" data-a="reOcr">🔄 결과가 이상해요 · ${A.mode==='text'?'표':'줄글'} 방식으로 다시 읽기</button>`:''}
       <button class="btn ghost full sm" data-a="addRestart">↩︎ 처음부터 다시</button>
     </div>`;
   }else if(A.img){
@@ -374,7 +374,7 @@ function vAdd(){
     </div>`;
   }else{
     body=`
-    <div class="tip">📌 <b>잘 읽히는 사진 찍는 법</b><br>· 단어장을 반듯하게 펴고 밝은 곳에서<br>· 단어 부분만 화면에 꽉 차게<br>· 영어와 한국어 뜻이 한 줄에 같이 보이게</div>
+    <div class="tip">📌 <b>잘 읽히는 사진 찍는 법</b><br>· 단어장을 반듯하게 펴고 밝은 곳에서<br>· 표 전체가 화면에 꽉 차게 (번호 | 영어 | 뜻)<br>· 그림자가 지지 않게 위에서 똑바로<br><span class="small muted">표는 영어 칸과 뜻 칸을 알아서 나눠 읽어요. 뜻이 여러 개면 쉼표로 나눠 줘요.</span></div>
     <div class="stack">
       <button class="btn blue full" data-a="pickPhoto" style="min-height:76px;font-size:20px">📸 사진 찍기 / 고르기</button>
       <button class="btn soft full" data-a="addTypedMode">⌨️ 직접 적을래요</button>
@@ -411,22 +411,160 @@ function prepCanvas(){
 }
 function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('load'));document.head.appendChild(s);});}
 function setProgress(p,msg){const b=$('#pbar'),m=$('#pmsg');if(b)b.style.width=Math.round(p*100)+'%';if(m&&msg)m.textContent=msg;}
+/* 뒷장 비침·그림자 지우기: 주변 종이보다 확실히 진한 글자만 남겨요 */
+function cleanInk(c){
+  const x=c.getContext('2d'),W=c.width,H=c.height,d=x.getImageData(0,0,W,H),p=d.data,g=new Float32Array(W*H);
+  for(let i=0;i<W*H;i++)g[i]=p[i*4];
+  const B=Math.max(24,Math.round(Math.max(W,H)/20)),bw=Math.ceil(W/B),bh=Math.ceil(H/B),bg=new Float32Array(bw*bh);
+  for(let by=0;by<bh;by++)for(let bx=0;bx<bw;bx++){
+    const hist=new Uint32Array(256);let n=0;
+    for(let y=by*B;y<Math.min(H,(by+1)*B);y+=2)for(let xx=bx*B;xx<Math.min(W,(bx+1)*B);xx+=2){hist[g[y*W+xx]|0]++;n++;}
+    let acc=0,v=255;for(let k=0;k<256;k++){acc+=hist[k];if(acc>=n*.7){v=k;break;}}
+    bg[by*bw+bx]=Math.max(v,40);
+  }
+  for(let y=0;y<H;y++){
+    const fy=Math.min(bh-1,Math.max(0,(y+.5)/B-.5)),y0=Math.floor(fy),y1=Math.min(bh-1,y0+1),ty=fy-y0;
+    for(let xx=0;xx<W;xx++){
+      const fx=Math.min(bw-1,Math.max(0,(xx+.5)/B-.5)),x0=Math.floor(fx),x1=Math.min(bw-1,x0+1),tx=fx-x0;
+      const b=(bg[y0*bw+x0]*(1-tx)+bg[y0*bw+x1]*tx)*(1-ty)+(bg[y1*bw+x0]*(1-tx)+bg[y1*bw+x1]*tx)*ty;
+      const r=g[y*W+xx]/b,v=r<=.5?0:r>=.8?255:(r-.5)/.3*255,i=(y*W+xx)*4;
+      p[i]=p[i+1]=p[i+2]=v;
+    }
+  }
+  x.putImageData(d,0,0);return c;
+}
 async function runOcr(){
   A.busy=true;render();
+  let worker,kw;
   try{
     if(!window.Tesseract){setProgress(.02,'읽기 도구를 불러오고 있어요…');await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js');}
-    const worker=await Tesseract.createWorker(['eng','kor'],1,{logger:m=>{
-      if(m.status==='recognizing text')setProgress(m.progress,'글자를 읽고 있어요… 📖 '+Math.round(m.progress*100)+'%');
+    let stage='';
+    const logger=m=>{
+      if(m.status==='recognizing text')setProgress(m.progress,stage+Math.round(m.progress*100)+'%');
       else if(/load|initializ/i.test(m.status))setProgress((m.progress||0)*.9,'읽기 도구를 준비하고 있어요 (처음 한 번은 조금 오래 걸려요)');
-    }});
-    await worker.setParameters({tessedit_pageseg_mode:A.psm,preserve_interword_spaces:'1'});
-    const {data}=await worker.recognize(prepCanvas());
-    await worker.terminate();
-    const rows=parseText(data.text||'');
+    };
+    worker=await Tesseract.createWorker(['eng','kor'],1,{logger});
+    const c=cleanInk(prepCanvas());
+    let rows=null;
+    if(A.mode!=='text'){
+      stage='표를 읽고 있어요… 📖 ';
+      await worker.setParameters({tessedit_pageseg_mode:'11',preserve_interword_spaces:'1'});
+      const {data}=await worker.recognize(c);
+      const t=parseTable(data.words||[],c.width);
+      if(t){
+        rows=t.rows;
+        {
+          stage='뜻을 한 번 더 꼼꼼히 읽고 있어요… 🔍 ';
+          kw=await Tesseract.createWorker('kor',1,{logger});
+          await kw.setParameters({tessedit_pageseg_mode:'7',preserve_interword_spaces:'1'});
+          for(let i=0;i<rows.length;i++){
+            const box=t.boxes[i],cc=document.createElement('canvas');
+            cc.width=box.w;cc.height=box.h;
+            const cx=cc.getContext('2d');cx.fillStyle='#fff';cx.fillRect(0,0,box.w,box.h);cx.drawImage(c,box.x,box.y,box.w,box.h,0,0,box.w,box.h);
+            const {data:dd}=await kw.recognize(cc);
+            const ko=tidyMeaning(joinKo((dd.words||[]).filter(w=>(/[가-힣]/.test(w.text)&&w.confidence>=40)||/^[,;()]+$/.test(w.text.trim())).map(w=>({t:w.text.trim(),b:w.bbox}))));
+            const syl=x=>(x.match(/[가-힣]/g)||[]).length;
+            /* 한국어 전용으로 다시 읽은 결과가 더 많이 읽었고 믿을 만하면 바꿔요 */
+            if(ko&&(!rows[i].ko||(dd.confidence>=70&&syl(ko)>syl(rows[i].ko)))){rows[i].ko=ko;rows[i].conf=Math.max(dd.confidence,rows[i].conf);}
+          }
+        }
+        rows=rows.map(r=>({en:r.en,ko:r.ko,check:!r.ko||r.conf<70}));
+      }
+    }
+    if(!rows){
+      stage='글자를 읽고 있어요… 📖 ';
+      await worker.setParameters({tessedit_pageseg_mode:'6',preserve_interword_spaces:'1'});
+      const {data}=await worker.recognize(c);
+      rows=parseText(data.text||'');
+    }
     A.rows=rows.length?rows:[{en:'',ko:''}];
     toast(rows.length?`단어 ${rows.length}개를 찾았어요!`:'단어를 찾지 못했어요. 직접 적어 주세요.');
   }catch(e){console.error(e);toast('글자 읽기에 실패했어요. 인터넷 연결을 확인해 주세요.');}
+  try{if(worker)await worker.terminate();if(kw)await kw.terminate();}catch(e){}
   A.busy=false;render();
+}
+
+/* 표 읽기: 영단어가 세로로 모인 열 = Word, 그 오른쪽 한글이 시작되는 열 = Meaning */
+/* 한글 조각 잇기: 한 글자짜리 조각은 붙이고, 두 글자 이상 낱말 사이는 띄어요 */
+function joinKo(list){
+  const one=t=>/^[(]?[가-힣][,;.)]?$/.test(t.t);
+  return list.reduce((s,t,i)=>{
+    if(!i)return t.t;
+    const p=list[i-1],gap=t.b.x0-p.b.x1,h=Math.max(8,(t.b.y1-t.b.y0+p.b.y1-p.b.y0)/2);
+    const ending=/^(하다|하는|한|하기|하게|하여|해서|했다|되다|되는|된|시키다|스럽다|스러운|적인|적으로|하고)[,;)]?$/.test(t.t);
+    const glue=/[,;)]$/.test(p.t)?false:/^[,;)]/.test(t.t)||/\($/.test(p.t)||ending?true:(one(t)&&one(p))?gap<h*1.2:(one(t)||one(p))?gap<h*.5:gap<h*.12;
+    return s+(glue?'':' ')+t.t;
+  },'');
+}
+const median=a=>{const s=a.slice().sort((x,y)=>x-y);return s.length?s[Math.floor(s.length/2)]:0;};
+function tidyMeaning(s){
+  return s.replace(/[^가-힣0-9\s,;()~·\/.]/g,' ').replace(/[;·]/g,',').replace(/\(\s*\)/g,'')
+    .replace(/\s*,\s*/g,', ').replace(/(,\s*)+/g,', ').replace(/\s+/g,' ')
+    .replace(/^[\s,.\/]+|[\s,.\/]+$/g,'').trim();
+}
+function parseTable(words,W){
+  const HEAD=/^(no|word|words|meaning|meanings|vocabulary|voca|korean|english|set|level)$/i;
+  const tok=words.map(w=>{
+    const t=w.text.trim(),lat=t.replace(/^[^A-Za-z]+|[^A-Za-z]+$/g,''),b=w.bbox;
+    return {t,b,c:w.confidence,yc:(b.y0+b.y1)/2,h:b.y1-b.y0,
+      en:!/[가-힣]/.test(t)&&/^[A-Za-z][A-Za-z'’\-]*[A-Za-z]$/.test(lat)?lat:'',
+      ko:/[가-힣]/.test(t)};
+  }).filter(t=>t.t);
+  const tolX=W*.04;
+  const cand=tok.filter(t=>t.en&&t.c>=50&&!HEAD.test(t.en));
+  if(cand.length<2)return null;
+  let best={n:0};
+  for(const a of cand){const n=cand.filter(b=>Math.abs(b.b.x0-a.b.x0)<=tolX).length;if(n>best.n)best={x:a.b.x0,n};}
+  if(best.n<2)return null;
+  const enX=median(cand.filter(b=>Math.abs(b.b.x0-best.x)<=tolX).map(b=>b.b.x0));
+  let anchors=tok.filter(t=>t.en&&t.c>=20&&!HEAD.test(t.en)&&Math.abs(t.b.x0-enX)<=tolX*1.2).sort((a,b)=>a.yc-b.yc);
+  const hMed=median(anchors.map(a=>a.h))||20;
+  anchors=anchors.filter((a,i)=>!i||a.yc-anchors[i-1].yc>hMed*.8);
+  const gaps=anchors.slice(1).map((a,i)=>a.yc-anchors[i].yc);
+  const pitch=gaps.length?median(gaps):hMed*3;
+  const rowTol=Math.max(hMed*.7,Math.min(pitch*.45,hMed*1.6));
+  const koLefts=[];
+  for(const a of anchors){const ks=tok.filter(t=>t.ko&&t.c>=35&&t.b.x0>a.b.x1&&Math.abs(t.yc-a.yc)<=rowTol);if(ks.length)koLefts.push(Math.min(...ks.map(k=>k.b.x0)));}
+  if(koLefts.length<Math.max(2,anchors.length*.4))return null;
+  const koX=median(koLefts);
+  const join=joinKo;
+  const rows=[],boxes=[];
+  for(const a of anchors){
+    const same=t=>Math.abs(t.yc-a.yc)<=rowTol;
+    /* Word 칸: 앵커부터 Meaning 칸 앞까지의 영어 */
+    const ens=tok.filter(t=>t.en&&same(t)&&t.b.x0>=a.b.x0-2&&t.b.x1<koX-tolX*.25&&(t===a||t.c>=45)).sort((x,y)=>x.b.x0-y.b.x0);
+    const enList=[];for(const t of ens){if(enList.length&&t.b.x0-enList[enList.length-1].b.x1>hMed*2.5)break;enList.push(t);}
+    let glued=false;
+    const en=enList.map(t=>{const sp=splitGlued(t.en);if(sp){glued=true;return sp;}return t.en;}).join(' ');
+    /* Meaning 칸: 한글 + 문장부호 */
+    const kos=tok.filter(t=>same(t)&&t.b.x0>=koX-tolX&&((t.ko&&t.c>=35)||/^[,;()~.]+$/.test(t.t))).sort((x,y)=>x.b.x0-y.b.x0);
+    const koList=[];for(const t of kos){if(koList.length&&t.b.x0-koList[koList.length-1].b.x1>hMed*3)break;if(!koList.length&&!t.ko&&t.t!=='(')continue;koList.push(t);}
+    const ko=tidyMeaning(join(koList));
+    const kk=koList.filter(t=>t.ko);
+    const conf=kk.length?kk.reduce((s,t)=>s+t.c,0)/kk.length:0;
+    if(!en||en.replace(/[^A-Za-z]/g,'').length<2)continue;
+    rows.push({en:/^[A-Z]+$/.test(en)&&en.length>1?en.toLowerCase():en,ko,conf:glued?Math.min(conf,60):conf,yc:a.yc});
+    boxes.push({off:kk.length?median(kk.map(t=>t.yc))-a.yc:null,yc:a.yc});
+  }
+  /* 뜻 칸 위치: 뜻을 못 읽은 행은 이웃 행의 기울기(영단어와 뜻의 높이 차)를 빌려 와요 */
+  const hh=Math.round(Math.min(pitch*.84,hMed*2.6)),bx=Math.max(0,Math.round(koX-tolX*.5));
+  boxes.forEach((b,i)=>{
+    let off=b.off;
+    if(off==null){
+      let pv=null,nx=null;
+      for(let j=i-1;j>=0;j--)if(boxes[j].off!=null){pv=boxes[j].off;break;}
+      for(let j=i+1;j<boxes.length;j++)if(boxes[j].off!=null){nx=boxes[j].off;break;}
+      off=pv!=null&&nx!=null?(pv+nx)/2:(pv??nx??0);
+    }
+    const cy=b.yc+off;
+    Object.assign(b,{x:bx,y:Math.max(0,Math.round(cy-hh/2)),w:Math.max(10,Math.round(W*.98-bx)),h:hh});
+  });
+  /* 표 위아래(제목, 학원 이름 등)는 버려요 */
+  const withKo=rows.filter(r=>r.ko);
+  if(withKo.length<2)return null;
+  const top=withKo[0].yc-pitch*1.3,bot=withKo[withKo.length-1].yc+pitch*1.3;
+  const keep=rows.map(r=>r.yc>=top&&r.yc<=bot);
+  return {rows:rows.filter((r,i)=>keep[i]),boxes:boxes.filter((b,i)=>keep[i])};
 }
 
 /* 사진/글에서 영어-뜻 짝 찾기 */
@@ -768,7 +906,7 @@ const ACT={
   pickPhoto:()=>{const f=$('#photo');f.value='';f.click();},
   rot:b=>{A.rot+=+b.dataset.d;render();},
   ocr:()=>runOcr(),
-  reOcr:()=>{A.psm=A.psm==='6'?'3':'6';A.rows=null;runOcr();},
+  reOcr:()=>{A.mode=A.mode==='text'?'table':'text';A.rows=null;runOcr();toast(A.mode==='text'?'줄글 방식으로 다시 읽어요':'표 방식으로 다시 읽어요');},
   typedParse:()=>{const t=($('#typed')?.value||'').trim();A.typed=t;if(!t){toast('단어를 적어 주세요');return;}
     const rows=t.split(/\r?\n/).map(l=>{const m=l.trim().match(/^(.*?[A-Za-z][A-Za-z'’\-.~() ]*?)\s*[:=\-–\t]?\s*([~가-힣].*)$/);return m?{en:m[1].replace(/^\d+\s*[.)]\s*/,'').trim(),ko:m[2].trim()}:(l.trim()?{en:l.trim(),ko:'',check:true}:null);}).filter(Boolean);
     A.rows=rows.length?rows:[{en:'',ko:''}];render();},
