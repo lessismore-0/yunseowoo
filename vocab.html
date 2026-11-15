@@ -136,6 +136,13 @@ textarea.inp{min-height:180px;resize:vertical;line-height:1.6}
 .sheet h2{margin:0 0 14px;font-size:24px}
 .sheet .ask{font-size:18px;font-weight:700;margin:4px 0 18px;text-align:center;word-break:keep-all}
 .help li{margin-bottom:8px}
+.bk-alert{background:var(--yellow-l);border:2px solid var(--yellow);border-radius:18px;padding:14px;margin:16px 0 0}
+.bk-alert p{margin:0 0 10px;font-weight:700;word-break:keep-all}
+.bk-card{background:#fff;border-radius:18px;padding:14px 16px;box-shadow:var(--shadow);margin-top:26px;display:flex;align-items:center;gap:12px}
+.bk-card .gi{background:var(--green-l)}
+.bk-card .bk-txt{flex:1;min-width:0;text-align:left}
+.bk-card small{color:var(--muted);display:block;font-size:14px}
+.bk-card .later{display:block;margin-top:2px;font-size:13px;color:var(--blue-d);font-weight:700;text-decoration:underline;min-height:28px}
 @media(min-width:600px){#modal{align-items:center}.big{min-height:150px}}
 @media(max-width:360px){.big span{font-size:19px}.q-word{font-size:34px}}
 </style>
@@ -152,7 +159,7 @@ const KEY='dan-ssokssok-v1';
 function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.groups))return s;}catch(e){}return {groups:[]};}
 let S=load();
 S.groups.forEach(g=>g.words.forEach(w=>{if(w.ipaSt==='err')delete w.ipaSt;}));
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast('저장 공간이 부족해요. 설정에서 백업을 저장해 주세요.');}}
+function save(silent){if(!silent)S.changedAt=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast('저장 공간이 부족해요. 설정에서 백업을 저장해 주세요.');}}
 
 /* ========== 도우미 ========== */
 const $=s=>document.querySelector(s);
@@ -246,9 +253,27 @@ function vHome(){
     <button class="big green" data-a="setup" ${total?'':'disabled'}>✏️<span>시험<br>보기</span></button>
     <button class="big yellow wide" data-a="scrap">⭐<span>자주 틀리는 단어<b class="badge">${sc}</b></span></button>
   </div>
+  ${backupAlert()}
   <div class="sec-head"><h2>📚 주차별 단어장</h2><button class="chip-btn" data-a="newGroup">+ 새 단어장</button></div>
   ${S.groups.length?`<div class="glist">${[...S.groups].reverse().map(groupCard).join('')}</div>`
-    :`<div class="empty">아직 단어장이 없어요.<br>📸 <b>사진으로 단어 넣기</b>를 눌러 시작해요!</div>`}`;
+    :`<div class="empty">아직 단어장이 없어요.<br>📸 <b>사진으로 단어 넣기</b>를 눌러 시작해요!</div>`}
+  ${total?`<div class="bk-card"><div class="gi">💾</div><div class="bk-txt"><b>백업</b><small>마지막 백업: ${S.lastBackup?agoText(S.lastBackup):'아직 안 했어요'}</small><button class="later" data-a="importData">백업 파일 불러오기</button></div><button class="btn green sm" data-a="exportData">저장하기</button></div>`:''}`;
+}
+/* ========== 백업 알림 ========== */
+const DAY=864e5;
+function agoText(t){const d=Math.floor((new Date().setHours(0,0,0,0)-new Date(t).setHours(0,0,0,0))/DAY);return d<=0?'오늘':d===1?'어제':d+'일 전';}
+function backupReason(){
+  if(!allWords().length)return '';
+  if(S.snoozeUntil&&Date.now()<S.snoozeUntil)return '';
+  if(!S.lastBackup)return '아직 백업을 한 번도 안 했어요.';
+  if((S.wordsAddedAt||0)>S.lastBackup)return '새 단어가 생겼어요.';
+  if(Date.now()-S.lastBackup>7*DAY&&(S.changedAt||0)>S.lastBackup)return `마지막 백업이 ${agoText(S.lastBackup)}이에요.`;
+  return '';
+}
+function backupAlert(){
+  const r=backupReason();if(!r)return '';
+  return `<div class="bk-alert" role="status"><p>📦 ${r} 단어가 지워지지 않게 백업할까요?</p>
+    <div class="row2"><button class="btn ghost sm" data-a="snoozeBackup">나중에</button><button class="btn yellow sm" data-a="exportData">💾 백업하기</button></div></div>`;
 }
 function groupCard(g){
   const sc=g.words.filter(w=>w.scrap).length;
@@ -484,6 +509,7 @@ function saveRows(){
     if(ex){if(ex.ko!==r.ko){ex.ko=r.ko;}dup++;continue;}
     g.words.push({id:uid(),en:r.en,ko:r.ko,ipa:'',wrong:0,right:0,streak:0,scrap:false,added:Date.now()});added++;
   }
+  if(added)S.wordsAddedAt=Date.now();
   save();
   toast(`${added}개 저장했어요!${dup?` (이미 있던 단어 ${dup}개는 뜻만 고쳤어요)`:''}`);
   go('group',{gid:g.id});
@@ -774,9 +800,10 @@ const ACT={
   /* 백업 */
   exportData:()=>{
     const blob=new Blob([JSON.stringify(S,null,1)],{type:'application/json'});
-    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`단어쏙쏙-백업-${new Date().toISOString().slice(0,10)}.json`;
-    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('백업 파일을 저장했어요');
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`ssokssok-backup-${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);S.lastBackup=Date.now();delete S.snoozeUntil;save(true);if(V.name==='home')render();toast('💾 백업 파일을 저장했어요! (다운로드 폴더 / 파일 앱)');
   },
+  snoozeBackup:()=>{S.snoozeUntil=Date.now()+DAY;save(true);render();toast('내일 다시 알려 줄게요');},
   importData:()=>{const f=$('#importFile');f.value='';f.click();},
 };
 

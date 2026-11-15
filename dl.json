@@ -1,0 +1,37 @@
+{
+ "groups": [
+  {
+   "id": "mwhrtas077anw",
+   "name": "11월 3주차",
+   "created": 1794743286480,
+   "words": [
+    {
+     "id": "mwhrtas0dcofy",
+     "en": "apple",
+     "ko": "사과",
+     "ipa": "",
+     "wrong": 0,
+     "right": 0,
+     "streak": 0,
+     "scrap": false,
+     "added": 1794743286480,
+     "ipaSt": "none"
+    },
+    {
+     "id": "mwhrtas0s6686",
+     "en": "banana",
+     "ko": "바나나",
+     "ipa": "",
+     "wrong": 0,
+     "right": 0,
+     "streak": 0,
+     "scrap": false,
+     "added": 1794743286480,
+     "ipaSt": "none"
+    }
+   ]
+  }
+ ],
+ "wordsAddedAt": 1794743286480,
+ "changedAt": 1794743286633
+}
