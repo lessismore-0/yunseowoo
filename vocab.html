@@ -167,7 +167,7 @@ textarea.inp{min-height:180px;resize:vertical;line-height:1.6}
 const KEY='dan-ssokssok-v1';
 function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.groups))return s;}catch(e){}return {groups:[]};}
 let S=load();
-S.groups.forEach(g=>g.words.forEach(w=>{if(w.ipaSt==='err')delete w.ipaSt;}));
+S.groups.forEach(g=>g.words.forEach(w=>{if(w.ipaSt==='err')delete w.ipaSt;if(w.audioSt==='err')delete w.audioSt;}));
 function save(silent){if(!silent)S.changedAt=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast('저장 공간이 부족해요. 설정에서 백업을 저장해 주세요.');}}
 
 /* ========== 도우미 ========== */
@@ -184,8 +184,12 @@ function weekName(d=new Date()){const first=new Date(d.getFullYear(),d.getMonth(
 let toastT;
 function toast(msg){document.querySelector('.toast')?.remove();const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);clearTimeout(toastT);toastT=setTimeout(()=>t.remove(),2600);}
 
-/* ========== 소리 ========== */
-function speak(text){
+/* ========== 소리 ==========
+   💸 과금 없음: 유료 API·API 키를 쓰지 않아요.
+   - 녹음 발음: Free Dictionary API(무료)가 주는 사람 녹음 mp3
+   - 녹음이 없거나 인터넷이 안 되면: 기기에 들어 있는 음성 읽기(Web Speech API, 무료) */
+const AUD=new Audio();AUD.preload='auto';
+function ttsSpeak(text){
   if(!('speechSynthesis' in window)){toast('이 기기에서는 소리가 나오지 않아요');return;}
   speechSynthesis.cancel();
   const u=new SpeechSynthesisUtterance(String(text).replace(/[()~\/]/g,' '));
@@ -195,39 +199,62 @@ function speak(text){
   if(v)u.voice=v;
   speechSynthesis.speak(u);
 }
+let speakId=0;
+function speak(text){
+  const id=++speakId;
+  try{AUD.pause();}catch(e){}
+  if('speechSynthesis' in window)speechSynthesis.cancel();
+  const w=allWords().find(w=>w.audio&&w.en===text);
+  if(!w){ttsSpeak(text);return;}
+  let done=false;
+  const fallback=()=>{if(done||id!==speakId)return;done=true;ttsSpeak(text);};
+  AUD.onerror=fallback;
+  AUD.src=w.audio;
+  const pr=AUD.play();
+  if(pr&&pr.catch)pr.catch(fallback);
+  setTimeout(()=>{if(id===speakId&&!done&&AUD.paused&&AUD.currentTime===0)fallback();},2500);
+  AUD.onplaying=()=>{done=true;};
+}
 if('speechSynthesis' in window)speechSynthesis.getVoices();
 
-/* ========== 발음기호 ========== */
+/* ========== 발음기호 · 녹음 발음 (Free Dictionary API, 무료) ========== */
 let ipaBusy=false;
-async function dictIpa(term){
+async function dictInfo(term){
   const r=await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(term));
-  if(r.status===404)return '';
+  if(r.status===404)return {ipa:'',audio:''};
   if(!r.ok)throw new Error('net');
   const d=await r.json();
+  let ipa='',audio='';
+  const ph=d.flatMap(e=>e.phonetics||[]);
+  const us=ph.find(p=>p.audio&&/-us\.mp3/.test(p.audio)),any=ph.find(p=>p.audio);
+  audio=((us||any||{}).audio||'').replace(/^\/\//,'https://');
+  if(!/^https:\/\//.test(audio))audio='';
   for(const e of d){
-    const ph=e.phonetics||[];
-    const us=ph.find(p=>p.text&&/-us\.mp3/.test(p.audio||''));
-    const t=(us&&us.text)||e.phonetic||(ph.find(p=>p.text)||{}).text;
-    if(t)return t.replace(/^[\/\[]+|[\/\]]+$/g,'').trim();
+    const p2=e.phonetics||[],u=p2.find(p=>p.text&&/-us\.mp3/.test(p.audio||''));
+    const t=(u&&u.text)||e.phonetic||(p2.find(p=>p.text)||{}).text;
+    if(t){ipa=t.replace(/^[\/\[]+|[\/\]]+$/g,'').trim();break;}
   }
-  return '';
+  return {ipa,audio};
 }
-async function fetchIpa(en){
+async function fetchInfo(en){
   const clean=en.replace(/\(.*?\)/g,' ').replace(/~/g,' ').split('/')[0].replace(/\s+/g,' ').trim().toLowerCase();
   const words=clean.split(' ').filter(Boolean);
-  if(!words.length||words.length>4)return '';
-  if(words.length===1){const p=await dictIpa(words[0]);return p?`/${p}/`:'';}
-  const whole=await dictIpa(clean);if(whole)return `/${whole}/`;
-  const parts=[];for(const t of words){const p=await dictIpa(t);if(!p)return '';parts.push(p);}
-  return '/'+parts.join(' ')+'/';
+  if(!words.length||words.length>4)return {ipa:'',audio:''};
+  const whole=await dictInfo(clean);
+  if(whole.ipa||words.length===1)return {ipa:whole.ipa?`/${whole.ipa}/`:'',audio:whole.audio};
+  const parts=[];for(const t of words){const p=await dictInfo(t);if(!p.ipa)return {ipa:'',audio:whole.audio};parts.push(p.ipa);}
+  return {ipa:'/'+parts.join(' ')+'/',audio:whole.audio}; /* 숙어는 통째로 녹음된 것만 써요 */
 }
 function queueIpa(){
   if(ipaBusy)return;
-  const w=allWords().find(w=>!w.ipaSt);
+  const w=allWords().find(w=>!w.ipaSt||!w.audioSt);
   if(!w)return;
   ipaBusy=true;
-  fetchIpa(w.en).then(ipa=>{w.ipa=ipa;w.ipaSt=ipa?'ok':'none';}).catch(()=>{w.ipaSt='err';})
-    .finally(()=>{save();ipaBusy=false;if(['group','scrap'].includes(V.name))render();if(w.ipaSt!=='err')setTimeout(queueIpa,120);});
+  fetchInfo(w.en).then(r=>{
+    if(!w.ipaSt){w.ipa=r.ipa;w.ipaSt=r.ipa?'ok':'none';} /* 직접 고친 발음기호는 그대로 둬요 */
+    w.audio=r.audio;w.audioSt=r.audio?'ok':'none';
+  }).catch(()=>{if(!w.ipaSt)w.ipaSt='err';w.audioSt='err';})
+    .finally(()=>{save(true);ipaBusy=false;if(['group','scrap'].includes(V.name))render();if(w.audioSt!=='err')setTimeout(queueIpa,120);});
 }
 function ipaHtml(w){
   if(w.ipa)return `<span class="ipa">${esc(w.ipa)}</span>`;
@@ -1182,12 +1209,13 @@ const ACT={
     if(!en||!ko){toast('영어와 뜻을 모두 적어 주세요');return;}
     const enChanged=en!==w.en;w.en=en;w.ko=ko;
     const ipa=$('#eIpa').value.trim();
+    if(enChanged){delete w.audio;delete w.audioSt;}
     if(enChanged&&ipa===(w.ipa||'')){w.ipa='';delete w.ipaSt;}else{w.ipa=ipa;w.ipaSt=ipa?'ok':'none';}
     const to=getGroup($('#eGroup').value),from=groupOf(w.id);
     if(to&&from&&to!==from){from.words=from.words.filter(x=>x!==w);to.words.push(w);toast(`'${to.name}'(으)로 옮겼어요`);}
     save();askResolve=null;closeModal();render();queueIpa();
   },
-  refetchIpa:b=>{const w=wordById(b.dataset.id);w.ipa='';delete w.ipaSt;save();closeModal();render();queueIpa();toast('발음기호를 다시 찾고 있어요');},
+  refetchIpa:b=>{const w=wordById(b.dataset.id);w.ipa='';delete w.ipaSt;delete w.audio;delete w.audioSt;save();closeModal();render();queueIpa();toast('발음기호를 다시 찾고 있어요');},
   delWord:async b=>{const w=wordById(b.dataset.id);if(await ask(`'${esc(w.en)}' 단어를 지울까요?`,'지우기',true)){const g=groupOf(w.id);g.words=g.words.filter(x=>x!==w);save();render();}},
   /* 단어 넣기 */
   add:b=>{resetAdd(b.dataset.gid,b.dataset.typed);go('add',{from:V.name==='group'?V.gid:null});},
